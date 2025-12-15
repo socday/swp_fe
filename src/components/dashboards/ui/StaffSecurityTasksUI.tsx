@@ -6,7 +6,7 @@ import { Label } from "../../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
 import { Input } from "../../ui/input";
 import { Calendar, Clock, Shield, Plus } from "lucide-react";
-import { SecurityTask, Room } from "../../../lib/api";
+import { SecurityTask, Room } from "../../../api/api";
 
 interface StaffSecurityTasksUIProps {
   securityTasks: SecurityTask[];

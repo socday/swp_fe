@@ -1,4 +1,4 @@
-import { Room } from '../../lib/api';
+import { Room } from '../../api/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Badge } from '../ui/badge';
 import { MapPin, Users, Monitor, Building2 } from 'lucide-react';

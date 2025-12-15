@@ -20,7 +20,7 @@ import {
   Calendar as CalendarIcon,
 } from "lucide-react";
 
-import { TIME_SLOTS } from "../../lib/timeSlots";
+import { TIME_SLOTS } from "../../api/timeSlots";
 import { motion } from "motion/react";
 
 import { useScheduleView } from "./useScheduleView";

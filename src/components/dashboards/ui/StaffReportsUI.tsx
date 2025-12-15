@@ -6,7 +6,7 @@ import { Textarea } from "../../ui/textarea";
 import { Label } from "../../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
 import { Calendar, FileText, User, Eye } from "lucide-react";
-import { Report } from "../../../lib/api";
+import { Report } from "../../../api/api";
 
 interface StaffReportsUIProps {
   reports: Report[];

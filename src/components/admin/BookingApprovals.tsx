@@ -3,7 +3,7 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Calendar, Clock, User, Check, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Booking } from '../../lib/api';
+import { Booking } from '../../api/api';
 import { useBookingApprovals } from './useBookingApprovals';
 
 export function BookingApprovals() {

@@ -2,7 +2,7 @@ import { Header } from "../shared/Header";
 import { Footer } from "../shared/Footer";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { RoomImageGallery } from "../shared/RoomImageGallery";
-import { getRoomImages } from "../../lib/roomImages";
+import { getRoomImages } from "../../api/roomImages";
 
 import { useSecurityDashboard } from "./useSecurityDashboard";
 

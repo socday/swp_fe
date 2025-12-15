@@ -4,9 +4,9 @@ import { Button } from "../ui/button";
 import { Calendar, Clock, MapPin, XCircle } from "lucide-react";
 import { motion } from "motion/react";
 import { RoomImageGallery } from "../shared/RoomImageGallery";
-import { getRoomImages } from "../../lib/roomImages";
+import { getRoomImages } from "../../api/roomImages";
 
-import { getSlotByTime } from "../../lib/timeSlots";
+import { getSlotByTime } from "../../api/timeSlots";
 import { useMyBookings } from "./useMyBookings";
 
 interface MyBookingsProps {

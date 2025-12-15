@@ -6,10 +6,10 @@ import { Calendar } from "../ui/calendar";
 import { motion } from "motion/react";
 import { Clock, CheckCircle2, X, CalendarDays } from "lucide-react";
 import { RoomImageGallery } from "../shared/RoomImageGallery";
-import { getRoomImages } from "../../lib/roomImages";
+import { getRoomImages } from "../../api/roomImages";
 
-import { TIME_SLOTS } from "../../lib/timeSlots";
-import { Room } from "../../lib/api";
+import { TIME_SLOTS } from "../../api/timeSlots";
+import { Room } from "../../api/api";
 
 import { useBookingDialog } from "./useBookingDialog";
 

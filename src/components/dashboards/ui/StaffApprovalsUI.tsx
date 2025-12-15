@@ -3,8 +3,8 @@ import { Badge } from "../../ui/badge";
 import { Button } from "../../ui/button";
 import { Calendar, Clock, User, Check, X, CalendarRange } from "lucide-react";
 import { RoomImageGallery } from "../../shared/RoomImageGallery";
-import { getRoomImages } from "../../../lib/roomImages";
-import { Booking } from "../../../lib/api";
+import { getRoomImages } from "../../../api/roomImages";
+import { Booking } from "../../../api/api";
 
 interface StaffApprovalsUIProps {
   pendingBookings: Booking[];

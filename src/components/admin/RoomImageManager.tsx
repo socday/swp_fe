@@ -1,4 +1,4 @@
-import { Room } from '../../lib/api';
+import { Room } from '../../api/api';
 import { useRoomImageManager } from './useRoomImageManager';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';

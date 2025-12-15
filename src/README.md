@@ -219,7 +219,7 @@ Database (Supabase - KV Store + Auth)
 - **Staff Guide**: [STAFF_GUIDE.md](./STAFF_GUIDE.md) - Chi tiết cho vai trò Staff
 - **Security Guide**: [SECURITY_GUIDE.md](./SECURITY_GUIDE.md) - Chi tiết cho vai trò Security
 - **API Documentation**: Xem comments trong `/supabase/functions/server/index.tsx`
-- **Frontend API**: Xem `/lib/api.ts`
+- **Frontend API**: Xem `/api/api.ts`
 
 ## 🏆 Credits
 

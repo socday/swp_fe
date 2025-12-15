@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "../../ui/textarea";
 import { Label } from "../../ui/label";
 import { Calendar, Clock, User, XCircle, CalendarRange } from "lucide-react";
-import { Booking } from "../../../lib/api";
+import { Booking } from "../../../api/api";
 
 interface StaffHistoryUIProps {
   bookingHistory: Booking[];

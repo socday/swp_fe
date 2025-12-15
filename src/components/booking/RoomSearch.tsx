@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { BookingDialog } from "./BookingDialog";
 import { RoomImageGallery } from "../shared/RoomImageGallery";
-import { getRoomImages } from "../../lib/roomImages";
+import { getRoomImages } from "../../api/roomImages";
 
 import { useRoomSearch } from "./useRoomSearch";
 
