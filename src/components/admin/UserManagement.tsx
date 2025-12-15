@@ -7,7 +7,8 @@ import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { UserData } from '../../api/api';
-import { Users, UserCog, UserX, Edit, Trash2 } from 'lucide-react';
+import { Users, UserCog, UserX, Edit, UserPlus, Loader2 } from 'lucide-react';
+import { type RegistrableRole } from '../../utils/userRoles';
 import { useUserManagement } from './useUserManagement';
 
 export function UserManagement() {
@@ -23,12 +24,17 @@ export function UserManagement() {
     setEditName,
     editRole,
     setEditRole,
-    editCampus,
-    setEditCampus,
     handleEditUser,
     handleSaveEdit,
     handleDeactivateUser,
     getRoleBadge,
+    createDialogOpen,
+    handleCreateDialogToggle,
+    createForm,
+    updateCreateForm,
+    createError,
+    creatingUser,
+    handleCreateUser,
   } = useUserManagement();
 
   const renderRoleBadge = (role: UserData['role']) => {
@@ -108,12 +114,18 @@ export function UserManagement() {
 
       {/* Users Table */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <UserCog className="w-5 h-5" />
-            User Management
-          </CardTitle>
-          <CardDescription>Manage user accounts and permissions</CardDescription>
+        <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <UserCog className="w-5 h-5" />
+              User Management
+            </CardTitle>
+            <CardDescription>Manage user accounts and permissions</CardDescription>
+          </div>
+          <Button onClick={() => handleCreateDialogToggle(true)} className="bg-orange-500 hover:bg-orange-600">
+            <UserPlus className="w-4 h-4 mr-2" />
+            New User
+          </Button>
         </CardHeader>
         <CardContent>
           {users.length === 0 ? (
@@ -125,7 +137,6 @@ export function UserManagement() {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead>Campus</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -136,11 +147,6 @@ export function UserManagement() {
                     <TableCell>{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{renderRoleBadge(user.role)}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {user.campus === 'FU_FPT' ? 'FU FPT' : 'NVH'}
-                      </Badge>
-                    </TableCell>
                     <TableCell className="text-sm text-gray-500">
                       {new Date(user.createdAt).toLocaleDateString()}
                     </TableCell>
@@ -176,6 +182,104 @@ export function UserManagement() {
         </CardContent>
       </Card>
 
+      {/* Create User Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={handleCreateDialogToggle}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create User</DialogTitle>
+            <DialogDescription> Create Account</DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-4 py-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleCreateUser();
+            }}
+          >
+            <div className="space-y-2">
+              <Label>Full Name</Label>
+              <Input
+                value={createForm.name}
+                onChange={(e) => updateCreateForm('name', e.target.value)}
+                required
+                disabled={creatingUser}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={createForm.email}
+                onChange={(e) => updateCreateForm('email', e.target.value)}
+                required
+                disabled={creatingUser}
+                placeholder="your.email@fpt.edu.vn"
+              />
+              <p className="text-xs text-gray-500">Only @fpt.edu.vn or @fe.edu.vn addresses are allowed</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Password</Label>
+              <Input
+                type="password"
+                value={createForm.password}
+                onChange={(e) => updateCreateForm('password', e.target.value)}
+                required
+                disabled={creatingUser}
+                placeholder="At least 6 characters"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Confirm Password</Label>
+              <Input
+                type="password"
+                value={createForm.confirmPassword}
+                onChange={(e) => updateCreateForm('confirmPassword', e.target.value)}
+                required
+                disabled={creatingUser}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select
+                value={createForm.role}
+                onValueChange={(value) => updateCreateForm('role', value as RegistrableRole)}
+                disabled={creatingUser}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="lecturer">Lecturer</SelectItem>
+                  <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="security">Security</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {createError && (
+              <div className="bg-red-50 text-red-700 text-sm p-3 rounded-md">
+                {createError}
+              </div>
+            )}
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => handleCreateDialogToggle(false)} disabled={creatingUser}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={creatingUser}>
+                {creatingUser ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create User'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit User Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
@@ -209,18 +313,6 @@ export function UserManagement() {
                       <SelectItem value="staff">Staff</SelectItem>
                       <SelectItem value="security">Security</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Campus</Label>
-                  <Select value={editCampus} onValueChange={(v) => setEditCampus(v as 'FU_FPT' | 'NVH')}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="FU_FPT">FU FPT</SelectItem>
-                      <SelectItem value="NVH">NVH</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

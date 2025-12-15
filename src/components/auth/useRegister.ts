@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { authApi } from '../../api/api';
+import type { CreateUserRequest } from '../../api/api';
+import authController from '../../api/api/controllers/authController';
+import { ROLE_ID_MAP, type RegistrableRole, isAllowedEmailDomain } from '../../utils/userRoles';
 
 interface FormData {
   name: string;
   email: string;
   password: string;
   confirmPassword: string;
-  role: 'student' | 'lecturer' | 'staff' | 'security';
+  role: RegistrableRole;
   campus: 'FU_FPT' | 'NVH';
 }
 
@@ -39,7 +41,7 @@ export function useRegister({ onRegisterSuccess }: UseRegisterProps) {
       return 'Password must be at least 6 characters';
     }
 
-    if (!formData.email.endsWith('@fpt.edu.vn') && !formData.email.endsWith('@fe.edu.vn')) {
+    if (!isAllowedEmailDomain(formData.email)) {
       return 'Please use your FPT University email (@fpt.edu.vn or @fe.edu.vn)';
     }
 
@@ -60,17 +62,19 @@ export function useRegister({ onRegisterSuccess }: UseRegisterProps) {
     setLoading(true);
 
     try {
-      const result = await authApi.register({
-        name: formData.name,
+      const roleId = ROLE_ID_MAP[formData.role];
+      if (!roleId) {
+        throw new Error('Unsupported role selected.');
+      }
+
+      const payload: CreateUserRequest = {
+        fullName: formData.name,
         email: formData.email,
         password: formData.password,
-        role: formData.role,
-        campus: formData.campus,
-      });
+        roleId,
+      };
 
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to create account');
-      }
+      await authController.createUser(payload);
 
       setSuccess(true);
       setTimeout(() => {

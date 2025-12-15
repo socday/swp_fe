@@ -223,28 +223,6 @@ export function Register({ onBack, onRegisterSuccess }: RegisterProps) {
                 </Select>
               </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6 }}
-                className="space-y-2"
-              >
-                <Label htmlFor="campus">Campus</Label>
-                <Select
-                  value={formData.campus}
-                  onValueChange={(value) => updateFormField('campus', value as 'FU_FPT' | 'NVH')}
-                  disabled={loading}
-                >
-                  <SelectTrigger id="campus">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="FU_FPT">FU FPT Campus</SelectItem>
-                    <SelectItem value="NVH">NVH Campus</SelectItem>
-                  </SelectContent>
-                </Select>
-              </motion.div>
-
               {error && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}

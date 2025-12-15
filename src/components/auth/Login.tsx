@@ -5,10 +5,6 @@ import { Label } from '../ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Building2, Loader2, Users, UserCog, Shield, Briefcase, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'motion/react';
-import { UserInitializer } from '../shared/UserInitializer';
-import { AdminAccountCreator } from './AdminAccountCreator';
-import { SecurityAccountCreator } from './SecurityAccountCreator';
-import { StaffAccountCreator } from './StaffAccountCreator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { useLogin } from './useLogin';
 
@@ -27,14 +23,6 @@ export function Login({ onLogin, onShowRegister }: LoginProps) {
     togglePasswordVisibility,
     loading,
     error,
-    showInitializer,
-    setShowInitializer,
-    showAdminCreator,
-    setShowAdminCreator,
-    showSecurityCreator,
-    setShowSecurityCreator,
-    showStaffCreator,
-    setShowStaffCreator,
     handleSubmit,
   } = useLogin({ onLogin });
 
@@ -173,141 +161,10 @@ export function Login({ onLogin, onShowRegister }: LoginProps) {
                 </Button>
               </motion.div>
             </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="mt-4 space-y-3"
-            >
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-2 text-gray-500">Or</span>
-                </div>
-              </div>
-
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setShowInitializer(true)}
-                  disabled={loading}
-                >
-                  <Users className="mr-2 h-4 w-4" />
-                  Create Demo Accounts
-                </Button>
-              </motion.div>
-
-              <p className="text-center text-xs text-gray-500">
-                Creates 7 demo users (3 students, 2 lecturers, 2 admins)
-              </p>
-
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setShowAdminCreator(true)}
-                  disabled={loading}
-                >
-                  <UserCog className="mr-2 h-4 w-4" />
-                  Create Admin Account
-                </Button>
-              </motion.div>
-
-              <p className="text-center text-xs text-gray-500">
-                Creates a new admin account
-              </p>
-
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setShowSecurityCreator(true)}
-                  disabled={loading}
-                >
-                  <Shield className="mr-2 h-4 w-4" />
-                  Create Security Account
-                </Button>
-              </motion.div>
-
-              <p className="text-center text-xs text-gray-500">
-                Creates 2 security accounts for facility management
-              </p>
-
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setShowStaffCreator(true)}
-                  disabled={loading}
-                >
-                  <Briefcase className="mr-2 h-4 w-4" />
-                  Create Staff Account
-                </Button>
-              </motion.div>
-
-              <p className="text-center text-xs text-gray-500">
-                Creates 2 staff accounts for facility management
-              </p>
-            </motion.div>
           </CardContent>
         </Card>
       </motion.div>
 
-      {/* User Initializer Dialog */}
-      <Dialog open={showInitializer} onOpenChange={setShowInitializer}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Create Demo Accounts</DialogTitle>
-            <DialogDescription>
-              Initialize the system with 7 demo user accounts for testing
-            </DialogDescription>
-          </DialogHeader>
-          <UserInitializer onClose={() => setShowInitializer(false)} />
-        </DialogContent>
-      </Dialog>
-
-      {/* Admin Account Creator Dialog */}
-      <Dialog open={showAdminCreator} onOpenChange={setShowAdminCreator}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create Admin Accounts</DialogTitle>
-            <DialogDescription>
-              Create 2 admin accounts - one for each campus (FU FPT & NVH)
-            </DialogDescription>
-          </DialogHeader>
-          <AdminAccountCreator />
-        </DialogContent>
-      </Dialog>
-
-      {/* Security Account Creator Dialog */}
-      <Dialog open={showSecurityCreator} onOpenChange={setShowSecurityCreator}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create Security Accounts</DialogTitle>
-            <DialogDescription>
-              Create 2 security accounts - one for each campus (FU FPT & NVH)
-            </DialogDescription>
-          </DialogHeader>
-          <SecurityAccountCreator />
-        </DialogContent>
-      </Dialog>
-
-      {/* Staff Account Creator Dialog */}
-      <Dialog open={showStaffCreator} onOpenChange={setShowStaffCreator}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create Staff Accounts</DialogTitle>
-            <DialogDescription>
-              Create 2 staff accounts - one for each campus (FU FPT & NVH)
-            </DialogDescription>
-          </DialogHeader>
-          <StaffAccountCreator />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -26,6 +26,7 @@ import {
   type ReportStatusUpdate,
   type StaffCancelRequest,
   type User,
+  type UserResponse,
 } from './api/types';
 import authController from './api/controllers/authController';
 import bookingsController from './api/controllers/bookingsController';
@@ -34,6 +35,8 @@ import facilitiesController from './api/controllers/facilitiesController';
 import notificationsController from './api/controllers/notificationsController';
 import reportsController from './api/controllers/reportsController';
 import slotsController from './api/controllers/slotsController';
+import usersController from './api/controllers/usersController';
+import { ROLE_ID_MAP } from '../utils/userRoles';
 
 // ============================================================================
 // Helper utilities
@@ -67,6 +70,36 @@ const safeErrorMessage = (error: unknown, fallback: string): string => {
     return error;
   }
   return fallback;
+};
+
+export interface UserData {
+  id: number;
+  name: string;
+  email: string;
+  role: ReturnType<typeof mapBackendRole>;
+  status: 'Active' | 'Inactive';
+  createdAt: string;
+}
+
+type BackendUserLike = Partial<User> & Partial<UserResponse> & {
+  role?: string | { roleName?: string };
+};
+
+const adaptUserData = (backend: BackendUserLike): UserData => {
+  const email = backend.email || '';
+  const backendRoleName =
+    typeof backend.role === 'string'
+      ? backend.role
+      : backend.role?.roleName || backend.roleName;
+
+  return {
+    id: backend.userId ?? 0,
+    name: backend.fullName || '',
+    email,
+    role: mapBackendRole(backendRoleName),
+    status: backend.isActive === false ? 'Inactive' : 'Active',
+    createdAt: backend.createdAt || new Date().toISOString(),
+  };
 };
 
 // ============================================================================
@@ -104,7 +137,6 @@ export const authApi = {
                 ? backendUser.role
                 : backendUser.role?.roleName
             ),
-            campus: 'FU_FPT' as const,
           }
         : undefined;
 
@@ -435,27 +467,58 @@ export const legacyBookingsApi = {
 };
 
 export const adminApi = {
-  async getAllUsers(): Promise<any[]> {
-    console.warn('adminApi.getAllUsers() not implemented for backend');
-    return [];
+  async getUsers(): Promise<UserData[]> {
+    try {
+      const response = await usersController.getUsers();
+      const items = response?.items ?? [];
+      return items.map((item) =>
+        adaptUserData({
+          ...item,
+          role: { roleName: item.roleName },
+        })
+      );
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      return [];
+    }
   },
-  async createUser(user: any): Promise<string | null> {
-    console.warn('adminApi.createUser() not implemented for backend');
-    return null;
+
+  async updateUser(
+    id: number,
+    payload: { name: string; role: UserData['role'] }
+  ): Promise<boolean> {
+    try {
+      await usersController.updateUser(id, {
+        fullName: payload.name,
+        isActive: true,
+      });
+
+      const roleId = ROLE_ID_MAP[payload.role];
+      if (roleId) {
+        await usersController.updateRole(id, { newRoleId: roleId });
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      return false;
+    }
   },
-  async updateUser(id: string, user: any): Promise<boolean> {
-    console.warn('adminApi.updateUser() not implemented for backend');
-    return false;
+
+  async deactivateUser(id: number, fullName: string): Promise<boolean> {
+    try {
+      await usersController.updateUser(id, {
+        fullName,
+        isActive: false,
+      });
+      return true;
+    } catch (error) {
+      console.error('Error deactivating user:', error);
+      return false;
+    }
   },
-  async deleteUser(id: string): Promise<boolean> {
-    console.warn('adminApi.deleteUser() not implemented for backend');
-    return false;
-  },
-  async deactivateUser(id: string): Promise<boolean> {
-    console.warn('adminApi.deactivateUser() not implemented for backend');
-    return false;
-  },
-  async getAdvancedAnalytics(): Promise<any> {
+
+  async getAdvancedAnalytics(_period?: string, _campus?: string): Promise<any> {
     console.warn('adminApi.getAdvancedAnalytics() not implemented for backend');
     return {
       totalBookings: 0,
@@ -466,11 +529,13 @@ export const adminApi = {
       popularRooms: [],
     };
   },
-  async uploadRoomImage(): Promise<string | null> {
-    console.warn('adminApi.uploadRoomImage() not implemented for backend');
-    return null;
+
+  async addRoomImage(_roomId: string | number, _imageUrl: string): Promise<boolean> {
+    console.warn('adminApi.addRoomImage() not implemented for backend');
+    return false;
   },
-  async deleteRoomImage(): Promise<boolean> {
+
+  async deleteRoomImage(_roomId: string | number, _imageUrl: string): Promise<boolean> {
     console.warn('adminApi.deleteRoomImage() not implemented for backend');
     return false;
   },
