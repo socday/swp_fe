@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { User } from '../../App';
-import { authApi, User as BackendUser } from '../../lib/api';
+import authController from '../../lib/api/controllers/authController';
+import type { User as BackendUser } from '../../lib/api';
 
 interface UseLoginProps {
   onLogin: (user: User) => void;
@@ -28,14 +29,18 @@ export function useLogin({ onLogin }: UseLoginProps) {
     setLoading(true);
 
     try {
-      const result = await authApi.login({ email, password });
+      const result = await authController.login({ email, password });
 
-      if (!result.success || !result.user) {
-        throw new Error(result.error || 'Failed to sign in');
+      if (!result.token) {
+        throw new Error(result.message || 'Failed to sign in');
       }
 
-      // Convert backend User to App User format
-      const backendUser = result.user;
+      // Ensure we have user payload to map into app format
+      const backendUser = result.user as BackendUser | undefined;
+      if (!backendUser || backendUser.userId == null) {
+        throw new Error('User profile is missing in login response');
+      }
+
       const roleName = backendUser.role?.roleName?.toLowerCase() || 'student';
       
       // Map role name to UserRole
@@ -53,9 +58,7 @@ export function useLogin({ onLogin }: UseLoginProps) {
       };
 
       // Store token if provided
-      if (result.token) {
-        localStorage.setItem('authToken', result.token);
-      }
+      localStorage.setItem('authToken', result.token);
 
       onLogin(user);
     } catch (err: any) {

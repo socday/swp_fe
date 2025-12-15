@@ -16,7 +16,7 @@ import type { Campus, Facility, Slot, Booking, Report, Notification } from './ap
 export interface FrontendCampus {
   id: number;
   name: string;
-  address: string;
+  address?: string;
   isActive: boolean;
 }
 
