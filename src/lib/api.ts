@@ -1,4 +1,3 @@
-import { buildApiUrl, getApiHeaders } from '../utils/config';
 import {
   adaptCampuses,
   adaptFacilities,
@@ -15,186 +14,59 @@ import {
   type FrontendReport,
   type FrontendNotification,
 } from './apiAdapters';
+import {
+  type Booking,
+  type BookingAvailabilityResponse,
+  type BookingFilterRequest,
+  type BookingRecurringRequest,
+  type BookingStatusUpdate,
+  type LoginRequest,
+  type Report,
+  type ReportCreateRequest,
+  type ReportStatusUpdate,
+  type StaffCancelRequest,
+  type User,
+} from './api/types';
+import authController from './api/controllers/authController';
+import bookingsController from './api/controllers/bookingsController';
+import campusesController from './api/controllers/campusesController';
+import facilitiesController from './api/controllers/facilitiesController';
+import notificationsController from './api/controllers/notificationsController';
+import reportsController from './api/controllers/reportsController';
+import slotsController from './api/controllers/slotsController';
 
-// Helper function to handle API responses
-const handleResponse = async <T,>(response: Response): Promise<T> => {
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`);
-  }
-  return response.json();
+// ============================================================================
+// Helper utilities
+// ============================================================================
+
+const mapBackendRole = (
+  backendRole: string | undefined
+): 'student' | 'lecturer' | 'admin' | 'staff' | 'security' => {
+  const roleMap: Record<string, 'student' | 'lecturer' | 'admin' | 'staff' | 'security'> = {
+    Student: 'student',
+    Lecturer: 'lecturer',
+    Admin: 'admin',
+    Staff: 'staff',
+    Security: 'security',
+  };
+  return roleMap[backendRole || ''] || 'student';
 };
 
-// ============================================================================
-// INTERFACES - Matching Backend Schema
-// ============================================================================
+const persistToken = (token?: string): void => {
+  if (!token) return;
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('authToken', token);
+  }
+};
 
-export interface Campus {
-  campusId: number;
-  campusName: string;
-  address: string;
-  isActive: boolean;
-  facilities?: Facility[];
-}
-
-export interface FacilityType {
-  typeId: number;
-  typeName: string;
-  requiresApproval: boolean;
-  description?: string;
-}
-
-export interface Asset {
-  assetId: number;
-  assetName: string;
-  assetType: string;
-  description?: string;
-}
-
-export interface FacilityAsset {
-  id: number;
-  facilityId: number;
-  assetId: number;
-  quantity?: number;
-  condition?: string;
-  asset?: Asset;
-}
-
-export interface Facility {
-  facilityId: number;
-  facilityName: string;
-  campusId: number;
-  typeId: number;
-  capacity: number;
-  status: string; // "Active" | "Maintenance" | "Inactive"
-  imageUrl?: string;
-  description?: string;
-  createdAt?: string;
-  campus?: Campus;
-  type?: FacilityType;
-  facilityAssets?: FacilityAsset[];
-}
-
-export interface Slot {
-  slotId: number;
-  slotName: string;
-  startTime: string; // TimeSpan format từ backend
-  endTime: string;
-  isActive: boolean;
-}
-
-export interface Role {
-  roleId: number;
-  roleName: string; // "Student", "Lecturer", "Staff", "Security", "Admin"
-  description?: string;
-}
-
-export interface User {
-  userId: number;
-  email: string;
-  passwordHash?: string;
-  fullName: string;
-  roleId: number;
-  phoneNumber?: string;
-  isActive: boolean;
-  createdAt?: string;
-  role?: Role;
-}
-
-export interface Booking {
-  bookingId: number;
-  userId: number;
-  facilityId: number;
-  bookingDate: string; // Date format
-  slotId: number;
-  purpose?: string;
-  bookingType?: string; // "Regular" | "Semester"
-  status: string; // "Pending" | "Approved" | "Rejected" | "Cancelled"
-  priorityLevel?: string;
-  approverId?: number;
-  rejectionReason?: string;
-  approvedAt?: string;
-  recurrenceGroupId?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  user?: User;
-  facility?: Facility;
-  slot?: Slot;
-  approver?: User;
-}
-
-export interface Report {
-  reportId: number;
-  userId: number;
-  facilityId?: number;
-  bookingId?: number;
-  title: string;
-  description: string;
-  status: string; // "Pending" | "Resolved"
-  reportType: string; // "Damage" | "Maintenance" | "Cleanliness" | "Equipment"
-  createdAt?: string;
-  resolvedAt?: string;
-  user?: User;
-  facility?: Facility;
-  booking?: Booking;
-}
-
-export interface Notification {
-  notificationId: number;
-  userId: number;
-  title: string;
-  message: string;
-  isRead: boolean;
-  type?: string;
-  createdAt?: string;
-  user?: User;
-}
-
-// ============================================================================
-// REQUEST/RESPONSE TYPES
-// ============================================================================
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface LoginResponse {
-  token?: string;
-  user: User;
-  message?: string;
-}
-
-export interface BookingCreateRequest {
-  facilityId: number;
-  bookingDate: string; // "YYYY-MM-DD"
-  slotId: number;
-  purpose?: string;
-}
-
-export interface BookingStatusUpdate {
-  status: string;
-  rejectionReason?: string;
-}
-
-export interface ReportCreateRequest {
-  bookingId?: number;
-  facilityId: number;
-  title: string;
-  description: string;
-  reportType: string;
-}
-
-// Helper function to map backend role to frontend role
-const mapBackendRole = (backendRole: string): 'student' | 'lecturer' | 'admin' | 'staff' | 'security' => {
-  const roleMap: Record<string, any> = {
-    'Student': 'student',
-    'Lecturer': 'lecturer',
-    'Admin': 'admin',
-    'Staff': 'staff',
-    'Security': 'security',
-  };
-  return roleMap[backendRole] || 'student';
+const safeErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return fallback;
 };
 
 // ============================================================================
@@ -202,39 +74,45 @@ const mapBackendRole = (backendRole: string): 'student' | 'lecturer' | 'admin' |
 // ============================================================================
 
 export const authApi = {
-  async login(data: LoginRequest): Promise<{ success: boolean; user?: any; token?: string; error?: string }> {
+  async login(
+    data: LoginRequest
+  ): Promise<{ success: boolean; user?: any; token?: string; error?: string }> {
     try {
-      const response = await fetch(buildApiUrl('/Auth/login'), {
-        method: 'POST',
-        headers: getApiHeaders(),
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Login failed' }));
-        return { success: false, error: errorData.message || 'Login failed' };
+      const result = await authController.login(data);
+
+      if (!result?.token) {
+        return { success: false, error: result?.message || 'Login failed' };
       }
-      
-      const result = await response.json();
-      
-      // Map backend response to App.tsx User format
-      const mappedUser = {
-        id: result.userId.toString(),           // Convert number to string
-        name: result.fullName,                  // Map fullName to name
-        email: result.email,
-        role: mapBackendRole(result.role),      // Convert "Student" to "student"
-        campus: 'FU_FPT' as const,              // Default campus (can be enhanced later)
-      };
-      
-      // Store token if provided
-      if (result.token) {
-        localStorage.setItem('authToken', result.token);
-      }
-      
+
+      persistToken(result.token);
+
+      const backendUser: Partial<User> & {
+        role?: string | { roleName?: string };
+      } =
+        result.user ??
+        ((result as unknown as Partial<User> & { role?: string }).userId
+          ? (result as unknown as Partial<User> & { role?: string })
+          : {});
+
+      const mappedUser = backendUser.userId
+        ? {
+            id: backendUser.userId.toString(),
+            name: backendUser.fullName || '',
+            email: backendUser.email || data.email,
+            role: mapBackendRole(
+              typeof backendUser.role === 'string'
+                ? backendUser.role
+                : backendUser.role?.roleName
+            ),
+            campus: 'FU_FPT' as const,
+          }
+        : undefined;
+
       return { success: true, user: mappedUser, token: result.token };
     } catch (error) {
+      const message = safeErrorMessage(error, 'Failed to login');
       console.error('Error during login:', error);
-      return { success: false, error: 'Failed to login' };
+      return { success: false, error: message };
     }
   },
 };
@@ -246,8 +124,7 @@ export const authApi = {
 export const campusesApi = {
   async getAll(): Promise<FrontendCampus[]> {
     try {
-      const response = await fetch(buildApiUrl('/Campuses'), { headers: getApiHeaders() });
-      const data = await handleResponse<Campus[]>(response);
+      const data = await campusesController.getCampuses();
       return adaptCampuses(data || []);
     } catch (error) {
       console.error('Error fetching campuses:', error);
@@ -263,17 +140,8 @@ export const campusesApi = {
 export const facilitiesApi = {
   async getAll(campusId?: number, typeId?: number): Promise<FrontendFacility[]> {
     try {
-      const params = new URLSearchParams();
-      if (campusId) params.append('campusId', campusId.toString());
-      if (typeId) params.append('typeId', typeId.toString());
-      
-      const url = params.toString() 
-        ? buildApiUrl(`/Facilities?${params}`)
-        : buildApiUrl('/Facilities');
-        
-      const response = await fetch(url, { headers: getApiHeaders() });
-      const data = await handleResponse<Facility[]>(response);
-      return adaptFacilities(data || []);
+      const facilities = await facilitiesController.getFacilities({ campusId, typeId });
+      return adaptFacilities(facilities || []);
     } catch (error) {
       console.error('Error fetching facilities:', error);
       return [];
@@ -288,9 +156,8 @@ export const facilitiesApi = {
 export const slotsApi = {
   async getAll(): Promise<FrontendSlot[]> {
     try {
-      const response = await fetch(buildApiUrl('/Slots'), { headers: getApiHeaders() });
-      const data = await handleResponse<Slot[]>(response);
-      return adaptSlots(data || []);
+      const slots = await slotsController.getSlots();
+      return adaptSlots(slots || []);
     } catch (error) {
       console.error('Error fetching slots:', error);
       return [];
@@ -305,47 +172,111 @@ export const slotsApi = {
 export const bookingsApi = {
   async getAll(status?: string): Promise<FrontendBooking[]> {
     try {
-      const params = status ? `?status=${status}` : '';
-      const response = await fetch(buildApiUrl(`/Bookings${params}`), { headers: getApiHeaders() });
-      const data = await handleResponse<Booking[]>(response);
-      return adaptBookings(data || []);
+      const filters: BookingFilterRequest | undefined = status ? { status } : undefined;
+      const data = await bookingsController.getBookings(filters);
+      if (Array.isArray((data as any)?.items)) {
+        return adaptBookings((data as any).items || []);
+      }
+      return adaptBookings((data as Booking[]) || []);
     } catch (error) {
       console.error('Error fetching bookings:', error);
       return [];
     }
   },
 
-  async create(booking: { facilityId: number; date: string; slotId: number; purpose?: string }): Promise<{ success: boolean; bookingId?: number; error?: string }> {
+  async getFiltered(filters?: BookingFilterRequest): Promise<FrontendBooking[]> {
     try {
-      const response = await fetch(buildApiUrl('/Bookings'), {
-        method: 'POST',
-        headers: getApiHeaders(),
-        body: JSON.stringify(toBackendBooking(booking)),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to create booking' }));
-        return { success: false, error: errorData.message || 'Failed to create booking' };
+      const data = await bookingsController.getBookings(filters);
+      if (Array.isArray((data as any)?.items)) {
+        return adaptBookings((data as any).items || []);
       }
-      
-      const data = await response.json();
-      return { success: true, bookingId: data.bookingId };
+      return adaptBookings((data as Booking[]) || []);
+    } catch (error) {
+      console.error('Error fetching filtered bookings:', error);
+      return [];
+    }
+  },
+
+  async create(booking: {
+    facilityId: number;
+    date: string;
+    slotId: number;
+    purpose?: string;
+  }): Promise<{ success: boolean; message?: string; error?: string }> {
+    try {
+      const payload = toBackendBooking(booking);
+      const response = await bookingsController.createBooking(payload);
+      return { success: true, message: response.message };
     } catch (error) {
       console.error('Error creating booking:', error);
-      return { success: false, error: 'Failed to create booking' };
+      return { success: false, error: safeErrorMessage(error, 'Failed to create booking') };
     }
   },
 
   async updateStatus(id: number, statusUpdate: BookingStatusUpdate): Promise<boolean> {
     try {
-      const response = await fetch(buildApiUrl(`/Bookings/${id}/status`), {
-        method: 'PUT',
-        headers: getApiHeaders(),
-        body: JSON.stringify(statusUpdate),
-      });
-      return response.ok;
+      await bookingsController.updateStatus(id, statusUpdate);
+      return true;
     } catch (error) {
       console.error('Error updating booking status:', error);
+      return false;
+    }
+  },
+
+  async checkAvailability(facilityId: number, date: string): Promise<BookingAvailabilityResponse | null> {
+    try {
+      return await bookingsController.checkAvailability(facilityId, date);
+    } catch (error) {
+      console.error('Error checking availability:', error);
+      return null;
+    }
+  },
+
+  async cancel(id: number): Promise<boolean> {
+    try {
+      await bookingsController.cancelBooking(id);
+      return true;
+    } catch (error) {
+      console.error('Error canceling booking:', error);
+      return false;
+    }
+  },
+
+  async getSecuritySchedule(campusId: number): Promise<FrontendBooking[]> {
+    try {
+      const data = await bookingsController.getSecuritySchedule(campusId);
+      return adaptBookings(data || []);
+    } catch (error) {
+      console.error('Error fetching security schedule:', error);
+      return [];
+    }
+  },
+
+  async createRecurring(request: BookingRecurringRequest): Promise<unknown> {
+    try {
+      return await bookingsController.createRecurringBooking(request);
+    } catch (error) {
+      console.error('Error creating recurring booking:', error);
+      throw error;
+    }
+  },
+
+  async updateRecurringStatus(recurrenceId: string, statusUpdate: BookingStatusUpdate): Promise<boolean> {
+    try {
+      await bookingsController.updateRecurringStatus(recurrenceId, statusUpdate);
+      return true;
+    } catch (error) {
+      console.error('Error updating recurring booking status:', error);
+      return false;
+    }
+  },
+
+  async staffCancel(id: number, request: StaffCancelRequest): Promise<boolean> {
+    try {
+      await bookingsController.staffCancelBooking(id, request);
+      return true;
+    } catch (error) {
+      console.error('Error performing staff cancel:', error);
       return false;
     }
   },
@@ -358,47 +289,42 @@ export const bookingsApi = {
 export const reportsApi = {
   async getAll(status?: string): Promise<FrontendReport[]> {
     try {
-      const params = status ? `?status=${status}` : '';
-      const response = await fetch(buildApiUrl(`/Reports${params}`), { headers: getApiHeaders() });
-      const data = await handleResponse<Report[]>(response);
-      return adaptReports(data || []);
+      const reports = await reportsController.getReports();
+      const filtered = status ? (reports || []).filter((r) => r.status === status) : reports;
+      return adaptReports(filtered || []);
     } catch (error) {
       console.error('Error fetching reports:', error);
       return [];
     }
   },
 
-  async create(report: { facilityId: number; title: string; description: string; reportType: string; bookingId?: number }): Promise<{ success: boolean; reportId?: number; error?: string }> {
+  async create(report: ReportCreateRequest): Promise<{ success: boolean; message?: string; error?: string }> {
     try {
-      const response = await fetch(buildApiUrl('/Reports'), {
-        method: 'POST',
-        headers: getApiHeaders(),
-        body: JSON.stringify(toBackendReport(report)),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to create report' }));
-        return { success: false, error: errorData.message || 'Failed to create report' };
-      }
-      
-      const data = await response.json();
-      return { success: true, reportId: data.reportId };
+      const payload = toBackendReport(report);
+      const response = await reportsController.createReport(payload);
+      return { success: true, message: response.message };
     } catch (error) {
       console.error('Error creating report:', error);
-      return { success: false, error: 'Failed to create report' };
+      return { success: false, error: safeErrorMessage(error, 'Failed to create report') };
     }
   },
 
   async resolve(id: number, resolution: string): Promise<boolean> {
     try {
-      const response = await fetch(buildApiUrl(`/Reports/${id}/resolve`), {
-        method: 'PUT',
-        headers: getApiHeaders(),
-        body: JSON.stringify(resolution),
-      });
-      return response.ok;
+      await reportsController.updateStatus(id, { status: 'Resolved' });
+      return true;
     } catch (error) {
       console.error('Error resolving report:', error);
+      return false;
+    }
+  },
+
+  async updateStatus(id: number, statusUpdate: ReportStatusUpdate): Promise<boolean> {
+    try {
+      await reportsController.updateStatus(id, statusUpdate);
+      return true;
+    } catch (error) {
+      console.error('Error updating report status:', error);
       return false;
     }
   },
@@ -411,8 +337,7 @@ export const reportsApi = {
 export const notificationsApi = {
   async getAll(): Promise<FrontendNotification[]> {
     try {
-      const response = await fetch(buildApiUrl('/Notifications'), { headers: getApiHeaders() });
-      const data = await handleResponse<Notification[]>(response);
+      const data = await notificationsController.getNotifications();
       return adaptNotifications(data || []);
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -425,7 +350,6 @@ export const notificationsApi = {
 // LEGACY COMPATIBILITY - Map old interfaces to new ones
 // ============================================================================
 
-// Legacy Room interface mapped to Facility
 export interface Room {
   id: string;
   name: string;
@@ -439,87 +363,69 @@ export interface Room {
   images?: string[];
 }
 
-// Helper để convert Facility sang Room format (cho backward compatibility)
-export const facilityToRoom = (facility: FrontendFacility): Room => {
-  return {
-    id: facility.id.toString(),
-    name: facility.name,
-    campus: facility.campusId === 1 ? 'FU_FPT' : 'NVH', // Giả sử campusId 1 = FU_FPT, 2 = NVH
-    building: facility.typeName || 'Unknown',
-    floor: 1, // Backend không có floor, default = 1
-    capacity: facility.capacity,
-    category: (facility.typeName as any) || 'Classroom',
-    amenities: [], // Backend facility assets không có trong FrontendFacility
-    status: facility.status as any,
-    images: facility.imageUrl ? [facility.imageUrl] : [],
-  };
-};
+export const facilityToRoom = (facility: FrontendFacility): Room => ({
+  id: facility.id.toString(),
+  name: facility.name,
+  campus: facility.campusId === 1 ? 'FU_FPT' : 'NVH',
+  building: facility.typeName || 'Unknown',
+  floor: 1,
+  capacity: facility.capacity,
+  category: (facility.typeName as Room['category']) || 'Classroom',
+  amenities: [],
+  status: facility.status as Room['status'],
+  images: facility.imageUrl ? [facility.imageUrl] : [],
+});
 
-// Legacy rooms API (sử dụng facilities API internally)
 export const roomsApi = {
   async getAll(): Promise<Room[]> {
     const facilities = await facilitiesApi.getAll();
     return facilities.map(facilityToRoom);
   },
-  
-  // Legacy methods that frontend might call (stub implementations)
   async create(room: Omit<Room, 'id'>): Promise<string | null> {
     console.warn('roomsApi.create() called but not implemented for backend');
     return null;
   },
-  
   async update(id: string, room: Partial<Room>): Promise<boolean> {
     console.warn('roomsApi.update() called but not implemented for backend');
     return false;
   },
-  
   async delete(id: string): Promise<boolean> {
     console.warn('roomsApi.delete() called but not implemented for backend');
     return false;
   },
 };
 
-// Legacy bookings API wrapper with type conversion
 const originalBookingsApi = bookingsApi;
 
-// Override bookingsApi to accept both string and number IDs for backward compatibility
 export const legacyBookingsApi = {
   async getAll(): Promise<any[]> {
     const bookings = await originalBookingsApi.getAll();
-    // Convert to legacy format if needed
-    return bookings.map(b => ({
+    return bookings.map((b: any) => ({
       ...b,
-      id: b.bookingId.toString(),
-      roomId: b.facilityId.toString(),
-      userId: b.userId.toString(),
+      id: b.id?.toString?.() || b.bookingId?.toString?.() || '',
+      roomId: b.facilityId?.toString?.() || '',
+      userId: b.userId?.toString?.() || '',
     }));
   },
-  
   async getByUser(userId: string): Promise<any[]> {
-    // Note: Backend doesn't have this endpoint in the OpenAPI spec
     const allBookings = await this.getAll();
-    return allBookings.filter(b => b.userId === userId);
+    return allBookings.filter((b) => b.userId === userId);
   },
-  
   async create(booking: any): Promise<{ success: boolean; id?: string; error?: string }> {
     console.warn('Legacy bookingsApi.create() called. This needs proper implementation.');
     return { success: false, error: 'Not yet implemented for backend' };
   },
-  
   async updateStatus(id: string | number, status: string): Promise<boolean> {
-    const numericId = typeof id === 'string' ? parseInt(id) : id;
+    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
     return originalBookingsApi.updateStatus(numericId, { status });
   },
-  
   async cancel(id: string | number): Promise<boolean> {
     console.warn('bookingsApi.cancel() not in backend spec');
     return false;
   },
-  
-  async getSchedule(startDate: string, endDate: string, campus?: string): Promise<any[]> {
+  async getSchedule(startDate: string, endDate: string): Promise<any[]> {
     const allBookings = await this.getAll();
-    // Filter by date range
-    return allBookings.filter(b => {
+    return allBookings.filter((b: any) => {
       const bookingDate = new Date(b.date || b.bookingDate);
       const start = new Date(startDate);
       const end = new Date(endDate);
@@ -528,60 +434,28 @@ export const legacyBookingsApi = {
   },
 };
 
-// Export all for convenience
-export {
-  handleResponse,
-};
-
-// ============================================================================
-// ADMIN API (Legacy - Not in backend spec)
-// ============================================================================
-
-export interface UserData {
-  id: string;
-  name: string;
-  email: string;
-  role: 'student' | 'lecturer' | 'admin' | 'staff' | 'security';
-  campus: 'FU_FPT' | 'NVH';
-  isActive: boolean;
-}
-
-export interface AdvancedAnalytics {
-  totalBookings: number;
-  totalUsers: number;
-  totalRooms: number;
-  averageUtilization: number;
-  peakHours: Array<{ hour: number; count: number }>;
-  popularRooms: Array<{ roomId: string; roomName: string; count: number }>;
-}
-
 export const adminApi = {
-  async getAllUsers(): Promise<UserData[]> {
+  async getAllUsers(): Promise<any[]> {
     console.warn('adminApi.getAllUsers() not implemented for backend');
     return [];
   },
-  
-  async createUser(user: Omit<UserData, 'id'>): Promise<string | null> {
+  async createUser(user: any): Promise<string | null> {
     console.warn('adminApi.createUser() not implemented for backend');
     return null;
   },
-  
-  async updateUser(id: string, user: Partial<UserData>): Promise<boolean> {
+  async updateUser(id: string, user: any): Promise<boolean> {
     console.warn('adminApi.updateUser() not implemented for backend');
     return false;
   },
-  
   async deleteUser(id: string): Promise<boolean> {
     console.warn('adminApi.deleteUser() not implemented for backend');
     return false;
   },
-  
   async deactivateUser(id: string): Promise<boolean> {
     console.warn('adminApi.deactivateUser() not implemented for backend');
     return false;
   },
-  
-  async getAdvancedAnalytics(): Promise<AdvancedAnalytics> {
+  async getAdvancedAnalytics(): Promise<any> {
     console.warn('adminApi.getAdvancedAnalytics() not implemented for backend');
     return {
       totalBookings: 0,
@@ -592,93 +466,55 @@ export const adminApi = {
       popularRooms: [],
     };
   },
-  
-  async uploadRoomImage(roomId: string, image: File): Promise<string | null> {
+  async uploadRoomImage(): Promise<string | null> {
     console.warn('adminApi.uploadRoomImage() not implemented for backend');
     return null;
   },
-  
-  async deleteRoomImage(roomId: string, imageUrl: string): Promise<boolean> {
+  async deleteRoomImage(): Promise<boolean> {
     console.warn('adminApi.deleteRoomImage() not implemented for backend');
     return false;
   },
 };
 
-// ============================================================================
-// ANALYTICS API (Legacy - Not in backend spec)
-// ============================================================================
-
-export interface UsageReport {
-  period: string;
-  totalBookings: number;
-  approvedBookings: number;
-  rejectedBookings: number;
-  utilizationRate: number;
-}
-
 export const analyticsApi = {
-  async getUsageReports(startDate: string, endDate: string): Promise<UsageReport[]> {
+  async getUsageReports(): Promise<any[]> {
     console.warn('analyticsApi.getUsageReports() not implemented for backend');
     return [];
   },
-  
-  async exportReport(type: string): Promise<Blob | null> {
+  async exportReport(): Promise<Blob | null> {
     console.warn('analyticsApi.exportReport() not implemented for backend');
     return null;
   },
 };
 
-// ============================================================================
-// STAFF API (Legacy - Not in backend spec)
-// ============================================================================
-
-export interface SecurityTask {
-  id: string;
-  bookingId: string;
-  roomName: string;
-  campus: string;
-  date: string;
-  timeSlot: string;
-  status: 'Pending' | 'Completed';
-  assignedTo?: string;
-  notes?: string;
-}
-
 export const staffApi = {
   async getPendingBookings(): Promise<FrontendBooking[]> {
-    // Use real bookings API
     return bookingsApi.getAll('Pending');
   },
-  
   async getBookingHistory(): Promise<FrontendBooking[]> {
     return bookingsApi.getAll();
   },
-  
-  async getSecurityTasks(): Promise<SecurityTask[]> {
+  async getSecurityTasks(): Promise<any[]> {
     console.warn('staffApi.getSecurityTasks() not implemented for backend');
     return [];
   },
-  
   async getReports(): Promise<FrontendReport[]> {
     return reportsApi.getAll();
   },
-  
-  async createSecurityTask(task: Omit<SecurityTask, 'id' | 'status'>): Promise<string | null> {
+  async createSecurityTask(): Promise<string | null> {
     console.warn('staffApi.createSecurityTask() not implemented for backend');
     return null;
   },
-  
   async cancelBooking(bookingId: string, reason: string): Promise<boolean> {
-    const numericId = parseInt(bookingId);
-    return bookingsApi.updateStatus(numericId, { 
-      status: 'Cancelled', 
-      rejectionReason: reason 
+    const numericId = parseInt(bookingId, 10);
+    return bookingsApi.updateStatus(numericId, {
+      status: 'Cancelled',
+      rejectionReason: reason,
     });
   },
-  
   async updateReportStatus(reportId: string, status: string, notes?: string): Promise<boolean> {
     if (status === 'Resolved') {
-      const numericId = parseInt(reportId);
+      const numericId = parseInt(reportId, 10);
       return reportsApi.resolve(numericId, notes || '');
     }
     console.warn('staffApi.updateReportStatus() partially implemented');
@@ -686,43 +522,32 @@ export const staffApi = {
   },
 };
 
-// ============================================================================
-// SECURITY API (Legacy - Not in backend spec)
-// ============================================================================
-
 export const securityApi = {
-  async getTasks(): Promise<SecurityTask[]> {
+  async getTasks(): Promise<any[]> {
     console.warn('securityApi.getTasks() not implemented for backend');
     return [];
   },
-  
   async getApprovedBookings(): Promise<FrontendBooking[]> {
     return bookingsApi.getAll('Approved');
   },
-  
-  async completeTask(taskId: string, notes: string): Promise<boolean> {
+  async completeTask(): Promise<boolean> {
     console.warn('securityApi.completeTask() not implemented for backend');
     return false;
   },
-  
   async submitReport(report: Omit<Report, 'reportId' | 'userId' | 'status' | 'createdAt'>): Promise<boolean> {
-    // Map to backend format
     const result = await reportsApi.create({
-      facilityId: parseInt((report as any).roomId || '0'),
+      facilityId: report.facilityId || 0,
       title: (report as any).title || 'Security Report',
       description: (report as any).description || '',
-      reportType: (report as any).type || 'Security',
+      reportType: (report as any).reportType || 'Security',
+      bookingId: report.bookingId,
     });
     return result.success;
   },
 };
 
-// ============================================================================
-// DATA INITIALIZATION (Legacy - Not needed with real backend)
-// ============================================================================
-
 export const initData = async (): Promise<void> => {
   console.warn('initData() called but not needed with real backend. Data should be initialized in backend database.');
-  // No-op: Backend should already have data initialized
-  return Promise.resolve();
 };
+
+export * from './api/types';

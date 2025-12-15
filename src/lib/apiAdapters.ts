@@ -7,7 +7,7 @@
  * This file ensures all API responses are transformed to match frontend expectations
  */
 
-import type { Campus, Facility, Slot, Booking, Report, Notification, User } from './api';
+import type { Campus, Facility, Slot, Booking, Report, Notification } from './api/types';
 
 // ============================================================================
 // FRONTEND INTERFACES (What components expect)
