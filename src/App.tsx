@@ -46,7 +46,7 @@ function App() {
 
   if (!currentUser) {
     return (
-      <DataInitializer>
+      <div>
         {authView === 'login' ? (
           <Login 
             onLogin={handleLogin} 
@@ -58,12 +58,11 @@ function App() {
             onRegisterSuccess={handleRegisterSuccess}
           />
         )}
-      </DataInitializer>
+      </div>
     );
   }
 
   return (
-    <DataInitializer>
       <div className="min-h-screen bg-gray-50">
         {currentUser.role === 'student' && (
           <StudentDashboard user={currentUser} onLogout={handleLogout} />
@@ -82,7 +81,6 @@ function App() {
         )}
         <BackendStatus />
       </div>
-    </DataInitializer>
   );
 }
 
