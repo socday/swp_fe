@@ -7,6 +7,15 @@ import { getRoomImages } from "../../api/roomImages";
 import { useSecurityDashboard } from "./useSecurityDashboard";
 
 import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "../ui/table";
+
+import {
   Card,
   CardHeader,
   CardTitle,
@@ -23,8 +32,6 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "../ui/dialog";
-
-import { Table, TableHead, TableRow, TableCell, TableBody } from "../ui/table";
 
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
@@ -93,43 +100,61 @@ export function SecurityDashboard({ user, onLogout }) {
                 ) : s.tasks.length === 0 ? (
                   <div className="text-center py-8">No tasks assigned</div>
                 ) : (
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Type</TableCell>
-                        <TableCell>Room</TableCell>
-                        <TableCell>Date & Time</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell>Action</TableCell>
-                      </TableRow>
-                    </TableHead>
-
-                    <TableBody>
-                      {s.tasks.map(task => (
-                        <TableRow key={task.id}>
-                          <TableCell>{task.type}</TableCell>
-                          <TableCell>{task.roomName}</TableCell>
-                          <TableCell>{task.date} ({task.startTime} - {task.endTime})</TableCell>
-                          <TableCell>
-                            <Badge className={task.status === "Pending" ? "bg-yellow-50 text-yellow-700" : "bg-green-50 text-green-700"}>
-                              {task.status}
-                            </Badge>
-                          </TableCell>
-
-                          <TableCell>
-                            {task.status === "Pending" && (
-                              <Button size="sm" onClick={() => {
-                                s.setSelectedTask(task);
-                                s.setCompleteTaskDialogOpen(true);
-                              }}>
-                                Complete
-                              </Button>
-                            )}
-                          </TableCell>
+                    <Table className="table-fixed w-full">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Title</TableHead>
+                          <TableHead className="text-center">Priority</TableHead>
+                          <TableHead>Created At</TableHead>
+                          <TableHead className="text-center">Status</TableHead>
+                          <TableHead className="text-center">Action</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+
+                      <TableBody>
+                        {s.tasks.map(task => (
+                          <TableRow key={task.taskId}>
+                            <TableCell>{task.title}</TableCell>
+
+                            <TableCell className="text-center">
+                              <Badge variant="outline">{task.priority}</Badge>
+                            </TableCell>
+
+                            <TableCell>
+                              {task.createdAt
+                                ? new Date(task.createdAt).toLocaleString()
+                                : "—"}
+                            </TableCell>
+
+                            <TableCell className="text-center">
+                              <Badge
+                                className={
+                                  task.status === "Pending"
+                                    ? "bg-yellow-50 text-yellow-700"
+                                    : "bg-green-50 text-green-700"
+                                }
+                              >
+                                {task.status}
+                              </Badge>
+                            </TableCell>
+
+                            <TableCell className="text-center">
+                              {task.status === "Pending" && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    s.setSelectedTask(task);
+                                    s.setCompleteTaskDialogOpen(true);
+                                  }}
+                                >
+                                  Complete
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                 )}
               </CardContent>
             </Card>
@@ -336,20 +361,24 @@ function CompleteTaskDialog({ s }) {
         {s.selectedTask && (
           <div className="space-y-4">
             <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-              <div>
-                <span className="text-sm text-gray-600">Task Type:</span>
-                <p className="font-medium">{s.selectedTask.type}</p>
-              </div>
-              <div>
-                <span className="text-sm text-gray-600">Room:</span>
-                <p className="font-medium">{s.selectedTask.roomName}</p>
-              </div>
-              <div>
-                <span className="text-sm text-gray-600">Date & Time:</span>
-                <p className="font-medium">
-                  {s.selectedTask.date} ({s.selectedTask.startTime} - {s.selectedTask.endTime})
-                </p>
-              </div>
+            <div>
+              <span className="text-sm text-gray-600">Title:</span>
+              <p className="font-medium">{s.selectedTask.title}</p>
+            </div>
+
+            <div>
+              <span className="text-sm text-gray-600">Priority:</span>
+              <p className="font-medium">{s.selectedTask.priority}</p>
+            </div>
+
+            <div>
+              <span className="text-sm text-gray-600">Created At:</span>
+              <p className="font-medium">
+                {s.selectedTask.createdAt
+                  ? new Date(s.selectedTask.createdAt).toLocaleString()
+                  : '—'}
+              </p>
+            </div>
             </div>
 
             <div className="space-y-2">
@@ -368,10 +397,13 @@ function CompleteTaskDialog({ s }) {
           <Button variant="outline" onClick={() => s.setCompleteTaskDialogOpen(false)}>
             Cancel
           </Button>
-          <Button onClick={s.handleCompleteTask} className="bg-green-500 hover:bg-green-600">
-            <CheckCircle2 className="w-4 h-4 mr-2" />
-            Mark Complete
-          </Button>
+            <Button
+              onClick={s.handleCompleteTask}
+              className="bg-green-500 hover:bg-green-600"
+            >
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              Mark Complete
+            </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

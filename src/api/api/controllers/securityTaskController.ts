@@ -2,23 +2,30 @@ import { apiClient } from '../../httpClient';
 import type {
   ApiMessageResponse,
   CompleteTaskRequest,
-  CreateTaskRequest,
   SecurityTask,
 } from '../types';
 
 export const securityTaskController = {
-  async assignTask(payload: CreateTaskRequest): Promise<ApiMessageResponse> {
-    const { data } = await apiClient.post<ApiMessageResponse>('/SecurityTask/assign', payload);
-    return data;
-  },
-
+  // 🔹 Get all / pending security tasks
   async getPendingTasks(): Promise<SecurityTask[]> {
-    const { data } = await apiClient.get<SecurityTask[]>('/SecurityTask/pending');
+    const { data } = await apiClient.get<SecurityTask[]>(
+      '/SecurityTask/pending'
+    );
     return data;
   },
 
-  async completeTask(taskId: number, payload: CompleteTaskRequest): Promise<ApiMessageResponse> {
-    const { data } = await apiClient.put<ApiMessageResponse>(`/SecurityTask/complete/${taskId}`, payload);
+  // 🔹 Confirm / complete task
+  async completeTask(
+    taskId: number,
+    payload?: CompleteTaskRequest
+  ): Promise<ApiMessageResponse> {
+    const { data } = await apiClient.put<ApiMessageResponse>(
+      `/SecurityTask/complete/${taskId}`,
+      {
+        reportNote: payload?.reportNote ?? 'Đã hoàn thành',
+      }
+    );
+
     return data;
   },
 };
