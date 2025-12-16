@@ -27,6 +27,7 @@ const toNumericId = (value?: string | number): number | null => {
 
 const resolveRole = (role?: string): User['role'] => {
   const normalized = (role || 'student').toLowerCase();
+  if (normalized == "facilityadmin") return 'staff';
   return ['student', 'lecturer', 'admin', 'staff', 'security'].includes(normalized)
     ? (normalized as User['role'])
     : null;
@@ -65,6 +66,7 @@ export function useLogin({ onLogin }: UseLoginProps) {
       }
 
       const decoded = jwtDecode<DecodedToken>(result.token);
+      console.log('Decoded token:', decoded);
       const backendUser = result.user as BackendUser | undefined;
 
       const resolvedUserId =
@@ -92,7 +94,6 @@ export function useLogin({ onLogin }: UseLoginProps) {
         name: resolvedName,
         email: resolvedEmail,
         role: resolveRole(resolvedRole),
-        campus: 'FU_FPT', // Default, backend doesn't have campus info on user
       };
 
       localStorage.setItem('authToken', result.token);

@@ -7,7 +7,7 @@
  * This file ensures all API responses are transformed to match frontend expectations
  */
 
-import type { Campus, Facility, Slot, Booking, Report, Notification } from './api/types';
+import type { Campus, Facility, Slot, Booking, Report, Notification, GetBookingRepsonse, GetFacilityResponse } from './api/types';
 
 // ============================================================================
 // FRONTEND INTERFACES (What components expect)
@@ -23,13 +23,10 @@ export interface FrontendCampus {
 export interface FrontendFacility {
   id: number;
   name: string;
-  campusId: number;
-  typeId: number;
   capacity: number;
   status: string;
   imageUrl?: string;
   description?: string;
-  campus?: FrontendCampus;
   typeName?: string;
 }
 
@@ -50,9 +47,7 @@ export interface FrontendBooking {
   purpose?: string;
   bookingType?: string;
   status: string;
-  rejectionReason?: string;
-  approvedAt?: string;
-  createdAt?: string;
+  rejectionReason?: string; 
   // Populated fields
   userName?: string;
   facilityName?: string;
@@ -135,7 +130,7 @@ export function adaptSlot(backend: Slot): FrontendSlot {
 /**
  * Map Booking from backend to frontend format
  */
-export function adaptBooking(backend: Booking): FrontendBooking {
+export function adaptBooking(backend: GetBookingRepsonse): FrontendBooking {
   return {
     id: backend.bookingId,
     userId: backend.userId,
@@ -143,15 +138,9 @@ export function adaptBooking(backend: Booking): FrontendBooking {
     date: backend.bookingDate,
     slotId: backend.slotId,
     purpose: backend.purpose,
-    bookingType: backend.bookingType,
     status: backend.status,
     rejectionReason: backend.rejectionReason,
-    approvedAt: backend.approvedAt,
-    createdAt: backend.createdAt,
-    // Populate nested data
-    userName: backend.user?.fullName,
-    facilityName: backend.facility?.facilityName,
-    slotName: backend.slot?.slotName,
+
   };
 }
 
@@ -197,7 +186,7 @@ export function adaptCampuses(backends: Campus[]): FrontendCampus[] {
   return backends.map(adaptCampus);
 }
 
-export function adaptFacilities(backends: Facility[]): FrontendFacility[] {
+export function adaptFacilities(backends: GetFacilityResponse[]): FrontendFacility[] {
   return backends.map(adaptFacility);
 }
 
@@ -206,6 +195,8 @@ export function adaptSlots(backends: Slot[]): FrontendSlot[] {
 }
 
 export function adaptBookings(backends: Booking[]): FrontendBooking[] {
+  console.log('Adapting bookings:', backends);
+  console.log('Adapting bookings:', backends.map(adaptBooking));
   return backends.map(adaptBooking);
 }
 

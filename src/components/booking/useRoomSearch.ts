@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { roomsApi, Room } from "../../api/api";
+import { roomsApi, Room, slotsApi } from "../../api/api";
+import type { FrontendSlot } from "../../api/apiAdapters";
 
 export function useRoomSearch() {
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [slots, setSlots] = useState<FrontendSlot[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -10,6 +12,9 @@ export function useRoomSearch() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [minCapacity, setMinCapacity] = useState("");
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const todayIso = new Date().toISOString().split("T")[0];
+  const [selectedDate, setSelectedDate] = useState(todayIso);
+  const [selectedSlotId, setSelectedSlotId] = useState("all");
 
   useEffect(() => {
     loadRooms();
@@ -17,9 +22,18 @@ export function useRoomSearch() {
 
   const loadRooms = async () => {
     setLoading(true);
-    const data = await roomsApi.getAll();
-    setRooms(data);
-    setLoading(false);
+    try {
+      const [roomData, slotData] = await Promise.all([roomsApi.getAll(), slotsApi.getAll()]);
+      console.log("Fetched rooms:", roomData);
+      setRooms(roomData);
+      setSlots(slotData.filter((slot) => slot.isActive));
+    } catch (error) {
+      console.error("Failed to load rooms or slots", error);
+      setRooms([]);
+      setSlots([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredRooms = rooms.filter((room) => {
@@ -40,6 +54,7 @@ export function useRoomSearch() {
   return {
     loading,
     filteredRooms,
+    availableSlots: slots,
 
     searchTerm,
     setSearchTerm,
@@ -52,6 +67,12 @@ export function useRoomSearch() {
 
     minCapacity,
     setMinCapacity,
+
+    selectedDate,
+    setSelectedDate,
+
+    selectedSlotId,
+    setSelectedSlotId,
 
     selectedRoom,
     setSelectedRoom,

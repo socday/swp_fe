@@ -3,11 +3,10 @@ import { toast } from 'sonner';
 import { analyticsApi } from '../../api/api';
 
 export const categoryColors: Record<string, string> = {
-  'Classroom': '#3b82f6',
-  'Lab': '#8b5cf6',
-  'Meeting Room': '#10b981',
-  'Lecture Hall': '#f97316',
-  'Study Room': '#ec4899',
+  'Phòng học': '#3b82f6',
+  'Phòng Lab': '#8b5cf6',
+  'Hội trường': '#10b981',
+  'Sân thể thao': '#f97316',
 };
 
 export function useUsageReports() {

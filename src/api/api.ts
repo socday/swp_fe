@@ -15,6 +15,7 @@ import {
   type FrontendNotification,
 } from './apiAdapters';
 import {
+  GetFacilityResponse,
   type Booking,
   type BookingAvailabilityResponse,
   type BookingFilterRequest,
@@ -170,10 +171,11 @@ export const campusesApi = {
 // ============================================================================
 
 export const facilitiesApi = {
-  async getAll(campusId?: number, typeId?: number): Promise<FrontendFacility[]> {
+  async getAll(campusId?: number, typeId?: number): Promise<GetFacilityResponse[]> {
     try {
       const facilities = await facilitiesController.getFacilities({ campusId, typeId });
-      return adaptFacilities(facilities || []);
+      console.log('Fetched facilities:', facilities);
+      return facilities;
     } catch (error) {
       console.error('Error fetching facilities:', error);
       return [];
@@ -219,6 +221,8 @@ export const bookingsApi = {
   async getFiltered(filters?: BookingFilterRequest): Promise<FrontendBooking[]> {
     try {
       const data = await bookingsController.getBookings(filters);
+      console.log('Raw booking data:', data);
+      console.log("ARray", Array.isArray((data as any)?.items));
       if (Array.isArray((data as any)?.items)) {
         return adaptBookings((data as any).items || []);
       }
@@ -389,11 +393,38 @@ export interface Room {
   building: string;
   floor: number;
   capacity: number;
-  category: 'Classroom' | 'Lab' | 'Meeting Room' | 'Lecture Hall' | 'Study Room';
+  category: 'Phòng học' | 'Phòng Lab' | 'Hội trường' | 'Sân thể thao';
   amenities: string[];
   status: 'Active' | 'Maintenance' | 'Inactive';
   images?: string[];
 }
+
+const CATEGORY_MAP: Record<string, Room['category']> = {
+  'Phòng học': 'Phòng học',
+  Classroom: 'Phòng học',
+  'Study Room': 'Phòng học',
+  'Self-study': 'Phòng học',
+  'Phòng Lab': 'Phòng Lab',
+  Lab: 'Phòng Lab',
+  'Computer Lab': 'Phòng Lab',
+  'Hội trường': 'Hội trường',
+  'Lecture Hall': 'Hội trường',
+  'Meeting Room': 'Hội trường',
+  Auditorium: 'Hội trường',
+  'Sân thể thao': 'Sân thể thao',
+  'Sports Hall': 'Sân thể thao',
+  'Sports Field': 'Sân thể thao',
+  Gym: 'Sân thể thao',
+  Stadium: 'Sân thể thao',
+};
+
+const normalizeCategory = (raw?: string): Room['category'] => {
+  if (!raw) return 'Phòng học';
+  const direct = CATEGORY_MAP[raw];
+  if (direct) return direct;
+  const trimmed = raw.trim();
+  return CATEGORY_MAP[trimmed] || 'Phòng học';
+};
 
 export const facilityToRoom = (facility: FrontendFacility): Room => ({
   id: facility.id.toString(),
@@ -402,16 +433,33 @@ export const facilityToRoom = (facility: FrontendFacility): Room => ({
   building: facility.typeName || 'Unknown',
   floor: 1,
   capacity: facility.capacity,
-  category: (facility.typeName as Room['category']) || 'Classroom',
+  category: normalizeCategory(facility.typeName),
   amenities: [],
   status: facility.status as Room['status'],
   images: facility.imageUrl ? [facility.imageUrl] : [],
 });
 
+const facilityResponseToRoom = (facility: GetFacilityResponse): Room => {
+  const normalizedCampus: Room['campus'] = facility.campusName?.toUpperCase().includes('NVH') ? 'NVH' : 'FU_FPT';
+
+  return {
+    id: facility.facilityId?.toString() || '',
+    name: facility.facilityName || 'Unnamed Facility',
+    campus: normalizedCampus,
+    building: facility.typeName || facility.campusName || 'Unknown',
+    floor: 1,
+    capacity: facility.facilityCapacity || 0,
+    category: normalizeCategory(facility.typeName),
+    amenities: [],
+    status: (facility.status as Room['status']) || 'Inactive',
+    images: facility.imageUrl ? [facility.imageUrl] : [],
+  };
+};
+
 export const roomsApi = {
   async getAll(): Promise<Room[]> {
     const facilities = await facilitiesApi.getAll();
-    return facilities.map(facilityToRoom);
+    return facilities.map(facilityResponseToRoom);
   },
   async create(room: Omit<Room, 'id'>): Promise<string | null> {
     console.warn('roomsApi.create() called but not implemented for backend');

@@ -6,7 +6,6 @@ import { motion } from "motion/react";
 import { RoomImageGallery } from "../shared/RoomImageGallery";
 import { getRoomImages } from "../../api/roomImages";
 
-import { getSlotByTime } from "../../api/timeSlots";
 import { useMyBookings } from "./useMyBookings";
 
 interface MyBookingsProps {
@@ -54,9 +53,8 @@ export function MyBookings({ userId }: MyBookingsProps) {
       <CardContent>
         <div className="space-y-4">
           {bookings.map((booking, index) => {
-            const slot = getSlotByTime(booking.startTime, booking.endTime);
-            // Lấy images từ local data bằng roomId
-            const roomImages = getRoomImages(booking.roomId);
+            const roomImages = getRoomImages(booking.roomImageKey);
+            const bookingDate = new Date(booking.date);
 
             return (
               <motion.div
@@ -70,7 +68,7 @@ export function MyBookings({ userId }: MyBookingsProps) {
                     <div className="flex items-start justify-between">
                       <div className="space-y-3 flex-1">
                         <div className="flex items-center gap-3">
-                          <h3 className="text-lg">{booking.roomName}</h3>
+                          <h3 className="text-lg">{booking.facilityName}</h3>
                           {renderStatusBadge(booking.status)}
                         </div>
 
@@ -79,15 +77,15 @@ export function MyBookings({ userId }: MyBookingsProps) {
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4" />
                             <span>
-                              {booking.campus === "FU_FPT" ? "FU FPT" : "NVH"} -{" "}
-                              {booking.building}
+                              {booking.campusLabel || "Unknown campus"}
+                              {booking.buildingLabel && ` - ${booking.buildingLabel}`}
                             </span>
                           </div>
 
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4" />
                             <span>
-                              {new Date(booking.date).toLocaleDateString("en-US", {
+                              {bookingDate.toLocaleDateString("en-US", {
                                 weekday: "short",
                                 year: "numeric",
                                 month: "short",
@@ -99,16 +97,15 @@ export function MyBookings({ userId }: MyBookingsProps) {
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4" />
                             <span>
-                              {slot
-                                ? `${slot.label} (${slot.displayTime})`
-                                : `${booking.startTime} - ${booking.endTime}`}
+                              {booking.slotLabel}
+                              {booking.slotDisplayTime && ` (${booking.slotDisplayTime})`}
                             </span>
                           </div>
                         </div>
 
                         <div className="text-sm">
                           <span className="text-gray-600">Purpose: </span>
-                          {booking.purpose}
+                          {booking.purpose || "N/A"}
                         </div>
 
                         {/* Room Images - Lấy từ local asset */}
@@ -116,7 +113,7 @@ export function MyBookings({ userId }: MyBookingsProps) {
                           <div className="mt-3">
                             <RoomImageGallery 
                               images={roomImages} 
-                              roomName={booking.roomName}
+                              roomName={booking.facilityName}
                               compact={true}
                             />
                           </div>

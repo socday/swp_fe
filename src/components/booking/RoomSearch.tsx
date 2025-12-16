@@ -23,6 +23,7 @@ import {
   Users,
   Monitor,
   Calendar,
+  Clock,
 } from "lucide-react";
 import { BookingDialog } from "./BookingDialog";
 import { RoomImageGallery } from "../shared/RoomImageGallery";
@@ -38,6 +39,7 @@ export function RoomSearch({ userRole }: RoomSearchProps) {
   const {
     loading,
     filteredRooms,
+    availableSlots,
 
     searchTerm,
     setSearchTerm,
@@ -51,9 +53,19 @@ export function RoomSearch({ userRole }: RoomSearchProps) {
     minCapacity,
     setMinCapacity,
 
+    selectedDate,
+    setSelectedDate,
+
+    selectedSlotId,
+    setSelectedSlotId,
+
     selectedRoom,
     setSelectedRoom,
   } = useRoomSearch();
+
+  const todayIso = new Date().toISOString().split("T")[0];
+  const selectedSlot = availableSlots.find((slot) => slot.id.toString() === selectedSlotId);
+  const formatTime = (time?: string) => (time ? time.slice(0, 5) : "--:--");
 
   if (loading) {
     return (
@@ -78,7 +90,7 @@ export function RoomSearch({ userRole }: RoomSearchProps) {
 
         <CardContent className="space-y-6">
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
             {/* Search */}
             <div className="space-y-2">
               <Label>Search</Label>
@@ -133,18 +145,15 @@ export function RoomSearch({ userRole }: RoomSearchProps) {
                   <SelectItem value="all">
                     All Categories
                   </SelectItem>
-                  <SelectItem value="Classroom">
-                    Classroom
+                  <SelectItem value="Phòng học">
+                    Phòng học
                   </SelectItem>
-                  <SelectItem value="Lab">Lab</SelectItem>
-                  <SelectItem value="Meeting Room">
-                    Meeting Room
+                  <SelectItem value="Phòng Lab">Phòng Lab</SelectItem>
+                  <SelectItem value="Hội trường">
+                    Hội trường
                   </SelectItem>
-                  <SelectItem value="Lecture Hall">
-                    Lecture Hall
-                  </SelectItem>
-                  <SelectItem value="Study Room">
-                    Study Room
+                  <SelectItem value="Sân thể thao">
+                    Sân thể thao
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -160,21 +169,70 @@ export function RoomSearch({ userRole }: RoomSearchProps) {
                 onChange={(e) => setMinCapacity(e.target.value)}
               />
             </div>
+
+            {/* Booking Date */}
+            <div className="space-y-2">
+              <Label>Booking Date</Label>
+              <Input
+                type="date"
+                min={todayIso}
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+              />
+            </div>
+
+            {/* Preferred Slot */}
+            <div className="space-y-2">
+              <Label>Preferred Slot</Label>
+              <Select value={selectedSlotId} onValueChange={setSelectedSlotId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Slots</SelectItem>
+                  {availableSlots.map((slot) => (
+                    <SelectItem key={slot.id} value={slot.id.toString()}>
+                      {slot.name} ({formatTime(slot.startTime)} - {formatTime(slot.endTime)})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          {availableSlots.length > 0 && (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-gray-700">
+                <Clock className="h-4 w-4" /> Active Slots
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                {availableSlots.map((slot) => (
+                  <Badge key={slot.id} variant="secondary" className="text-sm">
+                    {slot.name}: {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Results Header */}
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-600">
               {filteredRooms.length} rooms found
             </p>
+            <p className="text-sm text-gray-600">
+              {selectedDate ? new Date(selectedDate).toLocaleDateString() : "Select a date"}
+              {" • "}
+              {selectedSlot
+                ? `${selectedSlot.name}: ${formatTime(selectedSlot.startTime)} - ${formatTime(selectedSlot.endTime)}`
+                : "All Slots"}
+            </p>
           </div>
 
           {/* Rooms List */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredRooms.map((room) => {
-              // Lấy images từ local data thay vì từ API
               const roomImages = getRoomImages(room.id);
-
               return (
                 <Card key={room.id}>
                   <CardHeader>
@@ -223,6 +281,15 @@ export function RoomSearch({ userRole }: RoomSearchProps) {
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Monitor className="h-4 w-4" />
                       <span>{room.amenities.join(", ")}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Clock className="h-4 w-4" />
+                      <span>
+                        {selectedSlot
+                          ? `${selectedSlot.name}: ${formatTime(selectedSlot.startTime)} - ${formatTime(selectedSlot.endTime)}`
+                          : "All active slots available"}
+                      </span>
                     </div>
 
                     <Button

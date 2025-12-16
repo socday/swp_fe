@@ -40,6 +40,16 @@ export interface Facility {
   facilityAssets?: FacilityAsset[];
 }
 
+export interface GetFacilityResponse {
+  facilityId: number;
+  facilityName: string;
+  campusName: string;
+  facilityCapacity: number;
+  typeName: string;
+  imageUrl?: string;
+  status: string;
+}
+
 export interface FacilityCreateRequest {
   facilityName: string;
   campusId: number;

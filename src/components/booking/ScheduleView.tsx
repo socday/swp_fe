@@ -177,9 +177,9 @@ export function ScheduleView({ userId }: ScheduleViewProps) {
                               className={`p-1 rounded border text-[10px] truncate cursor-default ${getEventColor(
                                 bk
                               )}`}
-                              title={`${bk.roomName} - ${bk.purpose}`}
+                              title={`${bk.facilityName} - ${bk.purpose ?? ""}`}
                             >
-                              <div>{bk.roomName}</div>
+                              <div>{bk.facilityName}</div>
                             </motion.div>
                           ))}
                         </div>
