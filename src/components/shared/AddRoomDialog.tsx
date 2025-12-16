@@ -13,7 +13,7 @@ interface Room {
   building: string;
   floor: number;
   capacity: number;
-  category: 'Classroom' | 'Lab' | 'Meeting Room' | 'Lecture Hall' | 'Study Room';
+  category: 'Phòng học' | 'Phòng Lab' | 'Hội trường' | 'Sân thể thao';
   amenities: string[];
   status: 'Active' | 'Maintenance' | 'Inactive';
 }
@@ -43,7 +43,7 @@ export function AddRoomDialog({ open, onClose, onAdd }: AddRoomDialogProps) {
     building: '',
     floor: 1,
     capacity: 20,
-    category: 'Classroom',
+    category: 'Phòng học',
     amenities: [],
     status: 'Active',
   });
@@ -66,7 +66,7 @@ export function AddRoomDialog({ open, onClose, onAdd }: AddRoomDialogProps) {
       building: '',
       floor: 1,
       capacity: 20,
-      category: 'Classroom',
+      category: 'Phòng học',
       amenities: [],
       status: 'Active',
     });
@@ -168,11 +168,10 @@ export function AddRoomDialog({ open, onClose, onAdd }: AddRoomDialogProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Classroom">Classroom</SelectItem>
-                    <SelectItem value="Lab">Lab</SelectItem>
-                    <SelectItem value="Meeting Room">Meeting Room</SelectItem>
-                    <SelectItem value="Lecture Hall">Lecture Hall</SelectItem>
-                    <SelectItem value="Study Room">Study Room</SelectItem>
+                    <SelectItem value="Phòng học">Phòng học</SelectItem>
+                    <SelectItem value="Phòng Lab">Phòng Lab</SelectItem>
+                    <SelectItem value="Hội trường">Hội trường</SelectItem>
+                    <SelectItem value="Sân thể thao">Sân thể thao</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

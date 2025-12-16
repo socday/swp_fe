@@ -50,6 +50,9 @@ export function StaffHistoryUI({
     setCancelDialogOpen(true);
   };
 
+  const formatPurpose = (purpose?: string) =>
+    (purpose || "No purpose provided").replace("[SEMESTER] ", "");
+
   // Helper function để get semester days
   const getSemesterDays = (recurringDays: number[]) => {
     const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -160,7 +163,7 @@ export function StaffHistoryUI({
                       <div className={isSemester ? "bg-white p-3 rounded border border-orange-200" : "bg-gray-50 p-3 rounded"}>
                         <p className="text-sm">
                           <span className="text-gray-700">Purpose:</span>{" "}
-                          {booking.purpose.replace("[SEMESTER] ", "")}
+                          {formatPurpose(booking.purpose)}
                         </p>
                       </div>
 

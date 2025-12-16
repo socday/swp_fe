@@ -1,29 +1,65 @@
-import { useState, useEffect } from "react";
-import { bookingsApi, Booking } from "../../api/api";
+import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
+import { bookingsApi, roomsApi } from "../../api/api";
 import { TIME_SLOTS } from "../../api/timeSlots";
 
 const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+export interface ScheduleBooking {
+  id: number;
+  date: string;
+  slotId?: number;
+  slotName?: string;
+  facilityName: string;
+  campus?: string;
+  purpose?: string;
+  userId?: number;
+}
+
 export function useScheduleView(userId?: string) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedCampus, setSelectedCampus] = useState("all");
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<ScheduleBooking[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const loadBookings = useCallback(async () => {
+    setLoading(true);
+
+    try {
+      const [bookingData, rooms] = await Promise.all([
+        bookingsApi.getAll("Approved"),
+        roomsApi.getAll(),
+      ]);
+
+      const roomMap = new Map(rooms.map((room) => [room.id.toString(), room]));
+
+      const mapped = bookingData.map((booking) => {
+        const room = roomMap.get(booking.facilityId?.toString() || "");
+        return {
+          id: booking.id,
+          date: booking.date,
+          slotId: booking.slotId,
+          slotName: booking.slotName,
+          facilityName: booking.facilityName || room?.name || "Facility",
+          campus: room?.campus,
+          purpose: booking.purpose,
+          userId: booking.userId,
+        } as ScheduleBooking;
+      });
+
+      setBookings(mapped);
+    } catch (error) {
+      console.error("Failed to load schedule data", error);
+      toast.error("Unable to load schedule data. Please try again later.");
+      setBookings([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     loadBookings();
-  }, []);
-
-  const loadBookings = async () => {
-    setLoading(true);
-
-    const data = await bookingsApi.getAll();
-
-    // only approved
-    setBookings(data.filter((b) => b.status === "Approved"));
-
-    setLoading(false);
-  };
+  }, [loadBookings]);
 
   const getWeekDates = () => {
     const week: Date[] = [];
@@ -61,27 +97,25 @@ export function useScheduleView(userId?: string) {
 
   const getBookingsForDateAndSlot = (date: Date, slotId: number) => {
     const key = formatDateKey(date);
-    const slot = TIME_SLOTS.find((s) => s.id === slotId);
 
-    if (!slot) return [];
-
-    return bookings.filter((b) => {
-      const matchesDate = b.date === key;
-      const matchesSlot =
-        b.startTime === slot.startTime && b.endTime === slot.endTime;
-
+    return bookings.filter((booking) => {
+      const matchesDate = booking.date === key;
+      const matchesSlot = booking.slotId === slotId;
       const matchesCampus =
-        selectedCampus === "all" || b.campus === selectedCampus;
+        selectedCampus === "all" || booking.campus === selectedCampus;
 
       return matchesDate && matchesSlot && matchesCampus;
     });
   };
 
-  const getEventColor = (booking: Booking) => {
-    if (userId && booking.userId === userId) {
-      return "bg-orange-100 border-orange-400 text-orange-900";
+  const getEventColor = (booking: ScheduleBooking) => {
+    if (!userId) {
+      return "bg-blue-100 border-blue-400 text-blue-900";
     }
-    return "bg-blue-100 border-blue-400 text-blue-900";
+
+    return booking.userId?.toString() === userId
+      ? "bg-orange-100 border-orange-400 text-orange-900"
+      : "bg-blue-100 border-blue-400 text-blue-900";
   };
 
   return {

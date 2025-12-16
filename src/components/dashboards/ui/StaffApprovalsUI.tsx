@@ -19,6 +19,9 @@ export function StaffApprovalsUI({
   handleApproveBooking,
   handleRejectBooking,
 }: StaffApprovalsUIProps) {
+  const formatPurpose = (purpose?: string) =>
+    (purpose || "No purpose provided").replace("[SEMESTER] ", "");
+
   if (loading) {
     return (
       <Card>
@@ -129,7 +132,7 @@ export function StaffApprovalsUI({
                     <div className={isSemester ? "bg-white p-3 rounded border border-orange-200" : "bg-gray-50 p-3 rounded"}>
                       <p className="text-sm">
                         <span className="text-gray-700">Purpose:</span>{" "}
-                        {booking.purpose.replace("[SEMESTER] ", "")}
+                        {formatPurpose(booking.purpose)}
                       </p>
                     </div>
 

@@ -21,11 +21,10 @@ export function RoomDetailsDialog({ room, open, onClose, onUpdate, isAdmin = fal
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
-      Classroom: 'bg-blue-500 text-white',
-      Lab: 'bg-purple-500 text-white',
-      'Meeting Room': 'bg-green-500 text-white',
-      'Lecture Hall': 'bg-orange-500 text-white',
-      'Study Room': 'bg-teal-500 text-white',
+      'Phòng học': 'bg-blue-500 text-white',
+      'Phòng Lab': 'bg-purple-500 text-white',
+      'Hội trường': 'bg-green-500 text-white',
+      'Sân thể thao': 'bg-orange-500 text-white',
     };
     return colors[category] || 'bg-gray-500 text-white';
   };

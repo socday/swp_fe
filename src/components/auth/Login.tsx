@@ -151,14 +151,11 @@ export function Login({ onLogin, onShowRegister }: LoginProps) {
               <p className="text-sm text-gray-600 mb-3">
                 Don't have an account?
               </p>
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <motion.div>
                 <Button
-                  variant="outline"
                   className="w-full border-orange-500 text-orange-500 hover:bg-orange-50"
-                  onClick={onShowRegister}
-                  disabled={loading}
                 >
-                  Create New Account
+                 Please contact administrator 
                 </Button>
               </motion.div>
             </motion.div>

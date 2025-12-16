@@ -26,6 +26,22 @@ export interface Booking {
   approver?: User;
 }
 
+export interface GetBookingRepsonse {
+  bookedBy:string;
+  bookingDate: Date;
+  bookingId: number;
+  rejectionReason?: string;
+  purpose: string;
+  slotId: number;
+  facilityId: number;
+  campusName: string;
+  endTime: Date;
+  facilityName: string;
+  startTime: Date;
+  status: string;
+  userId: number;
+}
+
 export interface BookingCreateRequest {
   facilityId: number;
   bookingDate: string;

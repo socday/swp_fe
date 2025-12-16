@@ -4,11 +4,13 @@ import type {
   Facility,
   FacilityCreateRequest,
   FacilityUpdateRequest,
+  GetFacilityResponse,
 } from '../types';
 
 export const facilitiesController = {
-  async getFacilities(params?: { name?: string; campusId?: number; typeId?: number }): Promise<Facility[]> {
-    const { data } = await apiClient.get<Facility[]>('/Facilities', { params });
+  async getFacilities(params?: { name?: string; campusId?: number; typeId?: number }): Promise<GetFacilityResponse[]> {
+    const { data } = await apiClient.get<GetFacilityResponse[]>('/Facilities', { params });
+    console.log('Fetched facilities 1:', data);
     return data;
   },
 

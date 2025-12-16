@@ -63,11 +63,10 @@ export function useFacilityManagement() {
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
-      'Classroom': 'bg-blue-100 text-blue-800',
-      'Lab': 'bg-purple-100 text-purple-800',
-      'Meeting Room': 'bg-green-100 text-green-800',
-      'Lecture Hall': 'bg-orange-100 text-orange-800',
-      'Study Room': 'bg-pink-100 text-pink-800',
+      'Phòng học': 'bg-blue-100 text-blue-800',
+      'Phòng Lab': 'bg-purple-100 text-purple-800',
+      'Hội trường': 'bg-green-100 text-green-800',
+      'Sân thể thao': 'bg-orange-100 text-orange-800',
     };
     return colors[category] || 'bg-gray-100 text-gray-800';
   };
