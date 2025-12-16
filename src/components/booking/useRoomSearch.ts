@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { roomsApi, Room, slotsApi, FacilityType } from "../../api/api";
+import { roomsApi, Room, slotsApi, FacilityType, facilitiesApi } from "../../api/api";
 import type { FrontendSlot } from "../../api/apiAdapters";
 
 const getCurrentTimeString = () => {
@@ -21,7 +21,7 @@ export function useRoomSearch() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCampus, setSelectedCampus] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [minCapacity, setMinCapacity] = useState("");
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [selectedDate, setSelectedDate] = useState("");
@@ -30,15 +30,23 @@ export function useRoomSearch() {
 
   const filtersReady = Boolean(
     selectedCampus &&
-    selectedCategory &&
+    selectedCategoryId &&
     selectedDate &&
     minCapacity.trim()
   );
 
   useEffect(() => {
+  const fetchFacilityTypes = async () => {
+    try {
+      const data = await facilitiesApi.getAllFacilityTypes(); 
+      setFacilityTypes(data);
+    } catch (error) {
+      console.error('Error fetching facility types:', error);
+    }
+  };
 
-  })
-
+  fetchFacilityTypes();
+}, []);
   useEffect(() => {
     let isMounted = true;
 
@@ -89,7 +97,7 @@ export function useRoomSearch() {
     return () => {
       isMounted = false;
     };
-  }, [filtersReady, selectedCampus, selectedCategory, selectedDate, minCapacity]);
+  }, [filtersReady, selectedCampus, selectedCategoryId, selectedDate, minCapacity]);
 
   useEffect(() => {
     if (!selectedDate) {
@@ -116,19 +124,20 @@ export function useRoomSearch() {
 
   const minCapacityNumber = parseInt(minCapacity, 10);
   const filteredRooms = filtersReady ? rooms.filter((room) => {
-    if (!room?.name || !room?.building) return false;
+    if (!room?.name || !room?.building) return false;
 
-    const matchesSearch =
-      room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      room.building.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      room.building.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesCampus = room.campus === selectedCampus;
-    const matchesCategory = room.category === selectedCategory;
-    const matchesCapacity = Number.isNaN(minCapacityNumber) || room.capacity >= minCapacityNumber;
-    const matchesStatus = room.status === "Active";
+    const matchesCampus = room.campus === selectedCampus;
+    // 🛑 CHECK ROOM'S facilityTypeId AGAINST selectedCategoryId
+    const matchesCategory = room.facilityTypeId === selectedCategoryId; 
+    const matchesCapacity = Number.isNaN(minCapacityNumber) || room.capacity >= minCapacityNumber;
+    const matchesStatus = room.status === "Active";
 
-    return matchesSearch && matchesCampus && matchesCategory && matchesCapacity && matchesStatus;
-  }) : [];
+    return matchesSearch && matchesCampus && matchesCategory && matchesCapacity && matchesStatus;
+  }) : [];
 
   return {
     loading,
@@ -139,11 +148,14 @@ export function useRoomSearch() {
     searchTerm,
     setSearchTerm,
 
+    facilityTypes,
+    setFacilityTypes,
+
     selectedCampus,
     setSelectedCampus,
 
-    selectedCategory,
-    setSelectedCategory,
+    selectedCategoryId,
+    setSelectedCategoryId,
 
     minCapacity,
     setMinCapacity,

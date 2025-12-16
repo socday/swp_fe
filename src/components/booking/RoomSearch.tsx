@@ -49,8 +49,11 @@ export function RoomSearch({ userRole }: RoomSearchProps) {
     selectedCampus,
     setSelectedCampus,
 
-    selectedCategory,
-    setSelectedCategory,
+    facilityTypes,
+    setFacilityTypes,
+
+    selectedCategoryId,
+    setSelectedCategoryId,
 
     minCapacity,
     setMinCapacity,
@@ -142,27 +145,30 @@ export function RoomSearch({ userRole }: RoomSearchProps) {
 
             {/* Category */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-1">
+              <Label className="flex items-center gap-1 items-start">
                 Category <span className="text-red-500">*</span>
               </Label>
               <Select
-                value={selectedCategory || undefined}
-                onValueChange={setSelectedCategory}
+                value={selectedCategoryId !== null ? String(selectedCategoryId) : undefined}
+                onValueChange={(value) => setSelectedCategoryId(Number(value))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Classroom">
-                    Phòng học
-                  </SelectItem>
-                  <SelectItem value="Lab">Phòng Lab</SelectItem>
-                  <SelectItem value="Lecture Hall">
-                    Hội trường
-                  </SelectItem>
-                  <SelectItem value="Meeting Room">
-                    Sân thể thao
-                  </SelectItem>
+                  {facilityTypes.map((facilityType) => (
+                    <SelectItem
+                      key={facilityType.typeId}
+                      value={String(facilityType.typeId)}
+                    >
+                      {facilityType.typeName}
+                    </SelectItem>
+                  ))}
+                  {facilityTypes.length === 0 && (
+                    <SelectItem value="loading" disabled>
+                      Loading categories...
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
