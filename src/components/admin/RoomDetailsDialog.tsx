@@ -1,3 +1,4 @@
+import React from 'react';
 import { Room } from '../../api/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Badge } from '../ui/badge';

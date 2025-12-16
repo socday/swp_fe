@@ -52,6 +52,8 @@ export interface FrontendBooking {
   userName?: string;
   facilityName?: string;
   slotName?: string;
+  startTime?: Date;
+  endTime?: Date;
 }
 
 export interface FrontendReport {
@@ -135,12 +137,15 @@ export function adaptBooking(backend: GetBookingRepsonse): FrontendBooking {
     id: backend.bookingId,
     userId: backend.userId,
     facilityId: backend.facilityId,
+    facilityName: backend.facilityName,
+    startTime: backend.startTime,
+    endTime: backend.endTime,
     date: backend.bookingDate,
     slotId: backend.slotId,
     purpose: backend.purpose,
     status: backend.status,
     rejectionReason: backend.rejectionReason,
-
+    userName: backend.bookedBy,
   };
 }
 
@@ -196,7 +201,7 @@ export function adaptSlots(backends: Slot[]): FrontendSlot[] {
 
 export function adaptBookings(backends: Booking[]): FrontendBooking[] {
   console.log('Adapting bookings:', backends);
-  console.log('Adapting bookings:', backends.map(adaptBooking));
+  console.log('Adapting bookings map:', backends.map(adaptBooking));
   return backends.map(adaptBooking);
 }
 

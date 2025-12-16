@@ -1,8 +1,10 @@
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Users } from 'lucide-react';
 import { Button } from '../ui/button';
 import { motion } from 'motion/react';
+
 import {
   Dialog,
   DialogContent,

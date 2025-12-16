@@ -9,8 +9,8 @@ import { Booking } from "../../../api/api";
 interface StaffApprovalsUIProps {
   pendingBookings: Booking[];
   loading: boolean;
-  handleApproveBooking: (id: string) => void;
-  handleRejectBooking: (id: string) => void;
+  handleApproveBooking: (id: string | number) => void;
+  handleRejectBooking: (id: string | number) => void;
 }
 
 export function StaffApprovalsUI({

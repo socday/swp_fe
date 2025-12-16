@@ -1,0 +1,39 @@
+import { type FrontendBooking, type FrontendReport } from '../apiAdapters';
+import { bookingsApi } from './bookingsApi';
+import { reportsApi } from './reportsApi';
+
+export const staffApi = {
+  async getPendingBookings(): Promise<FrontendBooking[]> {
+    return bookingsApi.getAll('Pending');
+  },
+  async getBookingHistory(): Promise<FrontendBooking[]> {
+    return bookingsApi.getAll();
+  },
+  async getSecurityTasks(): Promise<any[]> {
+    console.warn('staffApi.getSecurityTasks() not implemented for backend');
+    return [];
+  },
+  async getReports(): Promise<FrontendReport[]> {
+    return reportsApi.getAll();
+  },
+  async createSecurityTask(): Promise<string | null> {
+    console.warn('staffApi.createSecurityTask() not implemented for backend');
+    return null;
+  },
+  async cancelBooking(bookingId: string, reason: string): Promise<boolean> {
+    const numericId = parseInt(bookingId, 10);
+    const result = await bookingsApi.updateStatus(numericId, {
+      status: 'Cancelled',
+      rejectionReason: reason,
+    });
+    return result.success;
+  },
+  async updateReportStatus(reportId: string, status: string, notes?: string): Promise<boolean> {
+    if (status === 'Resolved') {
+      const numericId = parseInt(reportId, 10);
+      return reportsApi.resolve(numericId, notes || '');
+    }
+    console.warn('staffApi.updateReportStatus() partially implemented');
+    return false;
+  },
+};

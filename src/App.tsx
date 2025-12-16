@@ -9,6 +9,7 @@ import { Register } from './components/auth/Register';
 import { DataInitializer } from './components/shared/DataInitializer';
 import { BackendStatus } from './components/shared/BackendStatus';
 import { BackendTestPage } from './components/test/BackendTestPage';
+import { Toaster } from './components/ui/sonner';
 
 export type UserRole = 'student' | 'lecturer' | 'admin' | 'staff' | 'security' | null;
 
@@ -62,24 +63,25 @@ function App() {
   }
 
   return (
-      <div className="min-h-screen bg-gray-50">
-        {currentUser.role === 'student' && (
-          <StudentDashboard user={currentUser} onLogout={handleLogout} />
-        )}
-        {currentUser.role === 'lecturer' && (
-          <LecturerDashboard user={currentUser} onLogout={handleLogout} />
-        )}
-        {currentUser.role === 'admin' && (
-          <AdminDashboard user={currentUser} onLogout={handleLogout} />
-        )}
-        {currentUser.role === 'staff' && (
-          <StaffDashboard user={currentUser} onLogout={handleLogout} />
-        )}
-        {currentUser.role === 'security' && (
-          <SecurityDashboard user={currentUser} onLogout={handleLogout} />
-        )}
-        <BackendStatus />
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      {currentUser.role === 'student' && (
+        <StudentDashboard user={currentUser} onLogout={handleLogout} />
+      )}
+      {currentUser.role === 'lecturer' && (
+        <LecturerDashboard user={currentUser} onLogout={handleLogout} />
+      )}
+      {currentUser.role === 'admin' && (
+        <AdminDashboard user={currentUser} onLogout={handleLogout} />
+      )}
+      {currentUser.role === 'staff' && (
+        <StaffDashboard user={currentUser} onLogout={handleLogout} />
+      )}
+      {currentUser.role === 'security' && (
+        <SecurityDashboard user={currentUser} onLogout={handleLogout} />
+      )}
+      <BackendStatus />
+      <Toaster position="top-right" richColors />
+    </div>
   );
 }
 

@@ -19,23 +19,38 @@ export function useBookingApprovals() {
     setLoading(false);
   };
 
-  const handleApprove = async (bookingId: string) => {
-    const success = await bookingsApi.updateStatus(bookingId, 'Approved');
-    if (success) {
-      toast.success('Booking request approved');
+  const normalizeBookingId = (bookingId: string | number): number =>
+    typeof bookingId === 'string' ? parseInt(bookingId, 10) : bookingId;
+
+  const handleApprove = async (bookingId: string | number) => {
+    const numericId = normalizeBookingId(bookingId);
+    if (Number.isNaN(numericId)) {
+      toast.error('Invalid booking identifier');
+      return;
+    }
+
+    const result = await bookingsApi.updateStatus(numericId, { status: 'Approved' });
+    if (result.success) {
+      toast.success(result.message || 'Booking request approved');
       loadBookings();
     } else {
-      toast.error('Failed to approve booking');
+      toast.error(result.error || 'Failed to approve booking');
     }
   };
 
-  const handleReject = async (bookingId: string) => {
-    const success = await bookingsApi.updateStatus(bookingId, 'Rejected');
-    if (success) {
-      toast.error('Booking request rejected');
+  const handleReject = async (bookingId: string | number) => {
+    const numericId = normalizeBookingId(bookingId);
+    if (Number.isNaN(numericId)) {
+      toast.error('Invalid booking identifier');
+      return;
+    }
+
+    const result = await bookingsApi.updateStatus(numericId, { status: 'Rejected' });
+    if (result.success) {
+      toast.success(result.message || 'Booking request rejected');
       loadBookings();
     } else {
-      toast.error('Failed to reject booking');
+      toast.error(result.error || 'Failed to reject booking');
     }
   };
 

@@ -83,16 +83,25 @@ export function useStaffDashboard() {
 
   // ========================= ACTION HANDLERS ========================= //
 
-  const handleApproveBooking = async (id: string) => {
-    const success = await bookingsApi.updateStatus(id, "Approved");
-    if (success) {
-      toast.success("Booking approved successfully");
+  const normalizeBookingId = (rawId: string | number): number =>
+    typeof rawId === "string" ? parseInt(rawId, 10) : rawId;
+
+  const handleApproveBooking = async (id: string | number) => {
+    const numericId = normalizeBookingId(id);
+    if (Number.isNaN(numericId)) {
+      toast.error("Invalid booking identifier");
+      return;
+    }
+
+    const result = await bookingsApi.updateStatus(numericId, { status: "Approved" });
+    if (result.success) {
+      toast.success(result.message || "Booking approved successfully");
       loadPendingBookings();
 
-      const booking = pendingBookings.find((b) => b.id === id);
+      const booking = pendingBookings.find((b) => b.id === numericId);
       if (booking) {
         await staffApi.createSecurityTask({
-          bookingId: id,
+          bookingId: numericId,
           roomName: booking.roomName,
           date: booking.date,
           startTime: booking.startTime,
@@ -100,12 +109,20 @@ export function useStaffDashboard() {
           type: "unlock_room",
         });
       }
-    } else toast.error("Failed to approve booking");
+    } else toast.error(result.error || "Failed to approve booking");
   };
 
-  const handleRejectBooking = async (id: string) => {
-    const success = await bookingsApi.updateStatus(id, "Rejected");
-    success ? toast.success("Booking rejected") : toast.error("Failed to reject");
+  const handleRejectBooking = async (id: string | number) => {
+    const numericId = normalizeBookingId(id);
+    if (Number.isNaN(numericId)) {
+      toast.error("Invalid booking identifier");
+      return;
+    }
+
+    const result = await bookingsApi.updateStatus(numericId, { status: "Rejected" });
+    result.success
+      ? toast.success(result.message || "Booking rejected")
+      : toast.error(result.error || "Failed to reject");
     loadPendingBookings();
   };
 
