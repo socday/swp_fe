@@ -11,4 +11,14 @@ export const slotsApi = {
       return [];
     }
   },
+
+  async getAvailable(facilityId?: number, date?: string): Promise<FrontendSlot[]> {
+    try {
+      const slots = await slotsController.getAvailableSlots({ facilityId, date });
+      return adaptSlots(slots || []);
+    } catch (error) {
+      console.error('Error fetching available slots:', error);
+      return [];
+    }
+  },
 };

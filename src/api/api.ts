@@ -1,6 +1,6 @@
 export { authApi } from './services/authApi';
 export { campusesApi } from './services/campusesApi';
-export { facilitiesApi } from './services/facilitiesApi';
+export { facilitiesApi, type FacilityFilters } from './services/facilitiesApi';
 export { slotsApi } from './services/slotsApi';
 export { bookingsApi } from './services/bookingsApi';
 export { reportsApi } from './services/reportsApi';
@@ -11,6 +11,7 @@ export { adminApi } from './services/adminApi';
 export { analyticsApi } from './services/analyticsApi';
 export { staffApi } from './services/staffApi';
 export { securityApi } from './services/securityApi';
+export { securityTasksApi } from './services/securityTasksApi';
 export { initData } from './services/initData';
 
 export type { Room } from './services/roomsApi';

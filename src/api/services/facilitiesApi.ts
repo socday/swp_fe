@@ -2,10 +2,19 @@ import facilitiesAssetController from '../api/controllers/facilityAssetControlle
 import facilitiesController from '../api/controllers/facilitiesController';
 import type { GetFacilityResponse } from '../api/types';
 
+export interface FacilityFilters {
+  name?: string;
+  typeId?: number;
+  campusId?: number;
+  slotId?: number;
+  date?: string;
+}
+
 export const facilitiesApi = {
-  async getAll(campusId?: number, typeId?: number): Promise<GetFacilityResponse[]> {
+  async getAll(filters?: FacilityFilters): Promise<GetFacilityResponse[]> {
     try {
-      const facilities = await facilitiesController.getFacilities({ campusId, typeId });
+      const params = filters;
+      const facilities = await facilitiesController.getFacilities(params);
       for (const facility of facilities) {
         const facilityId = facility.facilityId;
         const amenities = await facilitiesAssetController.getAssetsByFacility(facilityId);

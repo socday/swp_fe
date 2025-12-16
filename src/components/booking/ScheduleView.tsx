@@ -20,7 +20,6 @@ import {
   Calendar as CalendarIcon,
 } from "lucide-react";
 
-import { TIME_SLOTS } from "../../api/timeSlots";
 import { motion } from "motion/react";
 
 import { useScheduleView } from "./useScheduleView";
@@ -36,6 +35,7 @@ export function ScheduleView({ userId }: ScheduleViewProps) {
     selectedCampus,
     loading,
     bookings,
+    timeSlots,
 
     setSelectedCampus,
     goToPreviousWeek,
@@ -134,7 +134,7 @@ export function ScheduleView({ userId }: ScheduleViewProps) {
               </div>
 
               {/* Time slot rows */}
-              {TIME_SLOTS.map((slot, slotIdx) => (
+              {timeSlots.map((slot, slotIdx) => (
                 <motion.div
                   key={slot.id}
                   initial={{ opacity: 0, x: -20 }}

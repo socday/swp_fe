@@ -1,9 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { bookingsApi, roomsApi } from "../../api/api";
-import { TIME_SLOTS } from "../../api/timeSlots";
+import { fetchTimeSlots, TimeSlot } from "../../api/timeSlots";
 
 const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const campusIdFromName = (campus?: string) => {
+  if (campus === "NVH") return 2;
+  if (campus === "FU_FPT") return 1;
+  return undefined;
+};
 
 export interface ScheduleBooking {
   id: number;
@@ -21,13 +26,18 @@ export function useScheduleView(userId?: string) {
   const [selectedCampus, setSelectedCampus] = useState("all");
   const [bookings, setBookings] = useState<ScheduleBooking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
 
   const loadBookings = useCallback(async () => {
     setLoading(true);
 
     try {
+      const campusFilterId = selectedCampus === "all" ? undefined : campusIdFromName(selectedCampus);
+      const filters = campusFilterId
+        ? { status: "Approved", campusId: campusFilterId }
+        : { status: "Approved" };
       const [bookingData, rooms] = await Promise.all([
-        bookingsApi.getAll("Approved"),
+        bookingsApi.getFiltered(filters),
         roomsApi.getAll(),
       ]);
 
@@ -55,11 +65,15 @@ export function useScheduleView(userId?: string) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedCampus]);
 
   useEffect(() => {
     loadBookings();
   }, [loadBookings]);
+
+  useEffect(() => {
+    fetchTimeSlots().then(setTimeSlots).catch(console.error);
+  }, []);
 
   const getWeekDates = () => {
     const week: Date[] = [];
@@ -125,6 +139,7 @@ export function useScheduleView(userId?: string) {
     selectedCampus,
     bookings,
     loading,
+    timeSlots,
 
     setSelectedCampus,
     goToPreviousWeek,

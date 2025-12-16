@@ -8,7 +8,7 @@ import type {
 } from '../types';
 
 export const facilitiesController = {
-  async getFacilities(params?: { name?: string; campusId?: number; typeId?: number }): Promise<GetFacilityResponse[]> {
+  async getFacilities(params?: { name?: string; campusId?: number; typeId?: number; slotId?: number; date?: string }): Promise<GetFacilityResponse[]> {
     const { data } = await apiClient.get<GetFacilityResponse[]>('/Facilities', { params });
     console.log('Fetched facilities 1:', data);
     return data;

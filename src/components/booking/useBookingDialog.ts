@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { bookingsApi } from "../../api/api";
+import { bookingsApi, slotsApi } from "../../api/api";
 import { User } from "../../App";
 import { TimeSlot, fetchTimeSlots, getCachedTimeSlots } from "../../api/timeSlots";
 import { Room } from "../../api/api";
+import { adaptSlots } from "../../api/apiAdapters";
 
 export function useBookingDialog(
   room: Room,
@@ -16,6 +17,7 @@ export function useBookingDialog(
   const [purpose, setPurpose] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [allSlots, setAllSlots] = useState<TimeSlot[]>(getCachedTimeSlots());
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
   // Semester booking states
   const [bookingType, setBookingType] = useState<"single" | "semester">("single");
@@ -32,25 +34,55 @@ export function useBookingDialog(
     }
   }, [semesterStart]);
 
+  // Fetch available slots based on facilityId and date
   useEffect(() => {
     let isMounted = true;
 
-    fetchTimeSlots()
-      .then((slots) => {
-        if (isMounted) {
-          setAllSlots(slots);
+    const fetchAvailableSlots = async () => {
+      setLoadingSlots(true);
+      try {
+        const facilityId = normaliseRoomId(room.id);
+        const dateStr = date ? toIsoDate(date) : undefined;
+        
+        if (facilityId && !Number.isNaN(facilityId) && dateStr) {
+          // Fetch available slots from API with facilityId and date
+          const apiSlots = await slotsApi.getAvailable(facilityId, dateStr);
+          const timeSlots: TimeSlot[] = apiSlots.map(slot => ({
+            id: slot.id,
+            label: slot.name || `Slot ${slot.id}`,
+            startTime: slot.startTime || '',
+            endTime: slot.endTime || '',
+            displayTime: slot.startTime && slot.endTime ? `${slot.startTime} - ${slot.endTime}` : '',
+          }));
+          
+          if (isMounted) {
+            setAllSlots(timeSlots.length > 0 ? timeSlots : getCachedTimeSlots());
+          }
+        } else {
+          // Fallback to all slots if no facilityId or date
+          const slots = await fetchTimeSlots();
+          if (isMounted) {
+            setAllSlots(slots);
+          }
         }
-      })
-      .catch(() => {
+      } catch (error) {
+        console.error('Failed to fetch available slots:', error);
         if (isMounted) {
           setAllSlots(getCachedTimeSlots());
         }
-      });
+      } finally {
+        if (isMounted) {
+          setLoadingSlots(false);
+        }
+      }
+    };
+
+    fetchAvailableSlots();
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [room.id, date]);
 
   const getCurrentUser = (): User | null => {
     const s = localStorage.getItem("currentUser");
@@ -149,16 +181,17 @@ export function useBookingDialog(
     );
 
     const successes = responses.filter((result) => result?.success);
+    const failedResponse = responses.find((result) => !result?.success);
 
-    if (successes.length === selectedSlots.length) {
-      toast.success(`${successes.length} booking request(s) submitted successfully!`);
+    if (successes.length === selectedSlots.length && !failedResponse) {
+      const successMessage = responses[0]?.message || `${successes.length} booking request(s) submitted successfully!`;
+      toast.success(successMessage);
       resetForm();
       onSuccess?.();
       onClose?.();
     } else {
-      toast.error(
-        `${successes.length} of ${selectedSlots.length} bookings submitted. Please review failed slots.`
-      );
+      const failureMessage = failedResponse?.error || `${successes.length} of ${selectedSlots.length} bookings submitted. Please review failed slots.`;
+      toast.error(failureMessage);
       const failedSlots = selectedSlots.filter((_, index) => !responses[index]?.success);
       setSelectedSlots(failedSlots);
     }
@@ -180,29 +213,31 @@ export function useBookingDialog(
             endDate,
             daysOfWeek: normalizedDays,
           })
-          .then(() => ({ success: true }))
+          .then((result: any) => ({ success: true, message: result?.message }))
           .catch((error) => {
             console.error("create recurring booking failed", error);
-            return { success: false };
+            return { success: false, error: (error as Error).message };
           })
       )
     );
 
     const successes = responses.filter((result) => result?.success);
+    const failedResponse = responses.find((result) => !result?.success);
 
-    if (successes.length === selectedSlots.length) {
+    if (successes.length === selectedSlots.length && !failedResponse) {
       const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       const daysStr = selectedDays
         .map((day) => dayNames[day] ?? `Day ${day}`)
         .join(", ");
-      toast.success(
-        `Semester booking created! ${successes.length} booking set(s) scheduled for ${daysStr}.`
-      );
+      const successMessage = responses[0]?.message ||
+        `Semester booking created! ${successes.length} booking set(s) scheduled for ${daysStr}.`;
+      toast.success(successMessage);
       resetForm();
       onSuccess?.();
       onClose?.();
     } else {
-      toast.error("Some semester bookings could not be created. Please try again.");
+      const failureMessage = failedResponse?.error || "Some semester bookings could not be created. Please try again.";
+      toast.error(failureMessage);
     }
   };
 
