@@ -33,6 +33,7 @@ import authController from './api/controllers/authController';
 import bookingsController from './api/controllers/bookingsController';
 import campusesController from './api/controllers/campusesController';
 import facilitiesController from './api/controllers/facilitiesController';
+import facilitiesAssetController from './api/controllers/facilityAssetController';
 import notificationsController from './api/controllers/notificationsController';
 import reportsController from './api/controllers/reportsController';
 import slotsController from './api/controllers/slotsController';
@@ -173,7 +174,13 @@ export const campusesApi = {
 export const facilitiesApi = {
   async getAll(campusId?: number, typeId?: number): Promise<GetFacilityResponse[]> {
     try {
-      const facilities = await facilitiesController.getFacilities({ campusId, typeId });
+        const facilities = await facilitiesController.getFacilities({ campusId, typeId });
+        for (const facility of facilities) {
+    // Get the facility ID
+        const facilityId = facility.facilityId;
+        const amenities = await facilitiesAssetController.getAssetsByFacility(facilityId);
+        facility.facilityAssets = amenities;
+        }
       console.log('Fetched facilities:', facilities);
       return facilities;
     } catch (error) {
@@ -426,6 +433,18 @@ const normalizeCategory = (raw?: string): Room['category'] => {
   return CATEGORY_MAP[trimmed] || 'Phòng học';
 };
 
+const normalizeStatus = (raw?: string): Room['status'] => {
+  if (!raw) return 'Inactive';
+  const normalized = raw.trim().toLowerCase();
+  if (normalized === 'active' || normalized === 'available') {
+    return 'Active';
+  }
+  if (normalized.includes('maint')) {
+    return 'Maintenance';
+  }
+  return 'Inactive';
+};
+
 export const facilityToRoom = (facility: FrontendFacility): Room => ({
   id: facility.id.toString(),
   name: facility.name,
@@ -435,12 +454,19 @@ export const facilityToRoom = (facility: FrontendFacility): Room => ({
   capacity: facility.capacity,
   category: normalizeCategory(facility.typeName),
   amenities: [],
-  status: facility.status as Room['status'],
+  status: normalizeStatus(facility.status),
   images: facility.imageUrl ? [facility.imageUrl] : [],
 });
 
 const facilityResponseToRoom = (facility: GetFacilityResponse): Room => {
   const normalizedCampus: Room['campus'] = facility.campusName?.toUpperCase().includes('NVH') ? 'NVH' : 'FU_FPT';
+  const amenities: string[] = [];
+  for (const asset of facility.facilityAssets || []) {
+    if (asset.asset && asset.asset.assetName && asset.quantity) {
+      const putAsset = "(" + asset.asset.assetName + ", " + asset.quantity + ")";
+      amenities.push(putAsset);
+    }
+  }
 
   return {
     id: facility.facilityId?.toString() || '',
@@ -450,8 +476,8 @@ const facilityResponseToRoom = (facility: GetFacilityResponse): Room => {
     floor: 1,
     capacity: facility.facilityCapacity || 0,
     category: normalizeCategory(facility.typeName),
-    amenities: [],
-    status: (facility.status as Room['status']) || 'Inactive',
+    amenities: amenities,
+    status: normalizeStatus(facility.status),
     images: facility.imageUrl ? [facility.imageUrl] : [],
   };
 };

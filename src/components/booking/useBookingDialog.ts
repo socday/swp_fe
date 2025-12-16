@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { bookingsApi } from "../../api/api";
 import { User } from "../../App";
-import { TimeSlot } from "../../api/timeSlots";
+import { TimeSlot, fetchTimeSlots, getCachedTimeSlots } from "../../api/timeSlots";
 import { Room } from "../../api/api";
 
 export function useBookingDialog(
@@ -15,6 +15,7 @@ export function useBookingDialog(
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
   const [purpose, setPurpose] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [allSlots, setAllSlots] = useState<TimeSlot[]>(getCachedTimeSlots());
 
   // Semester booking states
   const [bookingType, setBookingType] = useState<"single" | "semester">("single");
@@ -30,6 +31,26 @@ export function useBookingDialog(
       setSemesterEnd(endDate);
     }
   }, [semesterStart]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetchTimeSlots()
+      .then((slots) => {
+        if (isMounted) {
+          setAllSlots(slots);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setAllSlots(getCachedTimeSlots());
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const getCurrentUser = (): User | null => {
     const s = localStorage.getItem("currentUser");
@@ -75,6 +96,38 @@ export function useBookingDialog(
   };
 
   const toIsoDate = (value: Date) => value.toISOString().split("T")[0];
+
+  const isToday = (value?: Date) => {
+    if (!value) return false;
+    const today = new Date();
+    return (
+      value.getFullYear() === today.getFullYear() &&
+      value.getMonth() === today.getMonth() &&
+      value.getDate() === today.getDate()
+    );
+  };
+
+  const getCurrentTimeString = () => {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    return `${hours}:${minutes}`;
+  };
+
+  const availableSlots = useMemo(() => {
+    if (bookingType === "single" && date && isToday(date)) {
+      const currentTime = getCurrentTimeString();
+      return allSlots.filter((slot) => slot.startTime > currentTime);
+    }
+    return allSlots;
+  }, [allSlots, bookingType, date]);
+
+  useEffect(() => {
+    if (bookingType === "single" && date && isToday(date)) {
+      const visibleIds = new Set(availableSlots.map((slot) => slot.id));
+      setSelectedSlots((prev) => prev.filter((slot) => visibleIds.has(slot.id)));
+    }
+  }, [availableSlots, bookingType, date]);
 
   const submitSingleBookings = async (facilityId: number) => {
     const targetDate = toIsoDate(date!);
@@ -211,5 +264,6 @@ export function useBookingDialog(
     setSemesterEnd,
     selectedDays,
     handleDayToggle,
+    availableSlots,
   };
 }

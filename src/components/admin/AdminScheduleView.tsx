@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '../ui/dialog';
-import { useAdminScheduleView, TIME_SLOTS, Booking } from './useAdminScheduleView';
+import { useAdminScheduleView, Booking } from './useAdminScheduleView';
 
 const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -28,6 +28,7 @@ export function AdminScheduleView() {
     formatDateKey,
     getBookingsForDateAndSlot,
     handleBookingClick,
+    timeSlots,
   } = useAdminScheduleView();
 
   const weekDates = getWeekDates();
@@ -109,7 +110,7 @@ export function AdminScheduleView() {
               </div>
 
               {/* Time Slots Rows */}
-              {TIME_SLOTS.map((slot, slotIndex) => (
+              {timeSlots.map((slot, slotIndex) => (
                 <motion.div
                   key={slot.id}
                   initial={{ opacity: 0, x: -20 }}
@@ -156,6 +157,9 @@ export function AdminScheduleView() {
                   })}
                 </motion.div>
               ))}
+              {timeSlots.length === 0 && (
+                <div className="text-center text-gray-500 py-8">No active slots available.</div>
+              )}
             </div>
           </div>
 

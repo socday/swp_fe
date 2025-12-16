@@ -8,7 +8,6 @@ import { Clock, CheckCircle2, X, CalendarDays } from "lucide-react";
 import { RoomImageGallery } from "../shared/RoomImageGallery";
 import { getRoomImages } from "../../api/roomImages";
 
-import { TIME_SLOTS } from "../../api/timeSlots";
 import { Room } from "../../api/api";
 
 import { useBookingDialog } from "./useBookingDialog";
@@ -40,6 +39,7 @@ export function BookingDialog({ room, open, userRole, onClose, onSuccess }: Book
     setSemesterEnd,
     selectedDays,
     handleDayToggle,
+    availableSlots,
   } = useBookingDialog(room, onSuccess, onClose, userRole);
 
   // Lấy images từ local data thay vì từ API
@@ -177,48 +177,54 @@ export function BookingDialog({ room, open, userRole, onClose, onSuccess }: Book
                 Select Time Slots (Multiple Selection)
               </Label>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {TIME_SLOTS.map((slot, index) => {
-                  const isSelected = selectedSlots.some((s) => s.id === slot.id);
-                  return (
-                    <motion.div
-                      key={slot.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => handleSlotToggle(slot)}
-                        className={`w-full p-4 rounded-lg border-2 relative text-left ${
-                          isSelected
-                            ? "border-orange-500 bg-orange-50 shadow-md"
-                            : "border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50"
-                        }`}
+              {availableSlots.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {availableSlots.map((slot, index) => {
+                    const isSelected = selectedSlots.some((s) => s.id === slot.id);
+                    return (
+                      <motion.div
+                        key={slot.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
                       >
-                        {isSelected && (
-                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-2 right-2">
-                            <CheckCircle2 className="h-5 w-5 text-orange-500" />
-                          </motion.div>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleSlotToggle(slot)}
+                          className={`w-full p-4 rounded-lg border-2 relative text-left ${
+                            isSelected
+                              ? "border-orange-500 bg-orange-50 shadow-md"
+                              : "border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50"
+                          }`}
+                        >
+                          {isSelected && (
+                            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-2 right-2">
+                              <CheckCircle2 className="h-5 w-5 text-orange-500" />
+                            </motion.div>
+                          )}
 
-                        <div className={`text-sm ${isSelected ? "text-orange-600" : "text-gray-600"}`}>
-                          {slot.label}
-                        </div>
+                          <div className={`text-sm ${isSelected ? "text-orange-600" : "text-gray-600"}`}>
+                            {slot.label}
+                          </div>
 
-                        <div className={isSelected ? "text-orange-900" : "text-gray-900"}>{slot.displayTime}</div>
+                          <div className={isSelected ? "text-orange-900" : "text-gray-900"}>{slot.displayTime}</div>
 
-                        {isSelected && (
-                          <motion.div
-                            layoutId={`slot-${slot.id}`}
-                            className="absolute bottom-0 left-0 right-0 h-1 bg-orange-500"
-                          />
-                        )}
-                      </button>
-                    </motion.div>
-                  );
-                })}
-              </div>
+                          {isSelected && (
+                            <motion.div
+                              layoutId={`slot-${slot.id}`}
+                              className="absolute bottom-0 left-0 right-0 h-1 bg-orange-500"
+                            />
+                          )}
+                        </button>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-md border border-dashed border-orange-300 p-4 text-center text-sm text-orange-700">
+                  All remaining slots for today have already passed. Pick another date to see more options.
+                </div>
+              )}
 
               {/* Selected Slots List */}
               {selectedSlots.length > 0 && (

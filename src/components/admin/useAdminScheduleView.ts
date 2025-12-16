@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { bookingsApi, roomsApi } from '../../api/api';
+import { fetchTimeSlots, getCachedTimeSlots, type TimeSlot } from '../../api/timeSlots';
 
 export interface Booking {
   id: string;
@@ -10,6 +11,8 @@ export interface Booking {
   userRole: 'student' | 'lecturer';
   date: string;
   timeSlot: string;
+  slotId?: number;
+  slotName?: string;
   startTime?: string;
   endTime?: string;
   purpose: string;
@@ -17,30 +20,49 @@ export interface Booking {
   campus: 'FU_FPT' | 'NVH';
 }
 
-export const TIME_SLOTS = [
-  { id: 1, label: 'Slot 1', displayTime: '7:00-9:00', startTime: '07:00', endTime: '09:00', value: '07:00-09:00' },
-  { id: 2, label: 'Slot 2', displayTime: '9:00-11:00', startTime: '09:00', endTime: '11:00', value: '09:00-11:00' },
-  { id: 3, label: 'Slot 3', displayTime: '12:00-14:00', startTime: '12:00', endTime: '14:00', value: '12:00-14:00' },
-  { id: 4, label: 'Slot 4', displayTime: '14:00-16:00', startTime: '14:00', endTime: '16:00', value: '14:00-16:00' },
-  { id: 5, label: 'Slot 5', displayTime: '16:00-18:00', startTime: '16:00', endTime: '18:00', value: '16:00-18:00' },
-];
-
 interface SelectedSlotBookings {
   bookings: Booking[];
   slotLabel: string;
   date: string;
 }
 
+const normalizeSlotLabel = (value?: string): string =>
+  value ? value.replace(/\s+/g, '').toLowerCase() : '';
+
+const normalizeTime = (value?: string): string => {
+  if (!value) return '';
+  const [hours = '00', minutes = '00'] = value.split(':');
+  return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+};
+
 export function useAdminScheduleView() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedCampus, setSelectedCampus] = useState<string>('all');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>(getCachedTimeSlots());
   const [selectedSlotBookings, setSelectedSlotBookings] = useState<SelectedSlotBookings | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     loadBookings();
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchTimeSlots()
+      .then((slots) => {
+        if (isMounted) {
+          setTimeSlots(slots);
+        }
+      })
+      .catch(() => {
+        /* fallback handled by helper */
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const loadBookings = async () => {
@@ -85,6 +107,10 @@ export function useAdminScheduleView() {
           ...booking,
           roomName: room?.name || 'Unknown Room',
           campus: room?.campus || 'FU_FPT',
+          slotId: booking.slotId,
+          slotName: booking.slotName,
+          startTime: booking.startTime,
+          endTime: booking.endTime,
         };
         return expandSemesterBooking(bookingWithRoom);
       });
@@ -133,19 +159,33 @@ export function useAdminScheduleView() {
 
   const getBookingsForDateAndSlot = (date: Date, slotId: number) => {
     const dateKey = formatDateKey(date);
-    const slot = TIME_SLOTS.find(s => s.id === slotId);
+    const slot = timeSlots.find((s) => s.id === slotId);
     if (!slot) return [];
 
     const filtered = bookings.filter(booking => {
       const matchesDate = booking.date === dateKey;
-      
+
       const bookingSlot = booking.timeSlot?.trim();
-      const matchesSlot = 
-        bookingSlot === slot.value ||
-        bookingSlot === slot.displayTime ||
-        bookingSlot === slot.label ||
-        bookingSlot === `Slot ${slot.id}` ||
-        booking.startTime === slot.startTime;
+      const bookingSlotName = booking.slotName?.trim();
+      const normalizedBookingSlot = normalizeSlotLabel(bookingSlot);
+      const normalizedBookingSlotName = normalizeSlotLabel(bookingSlotName);
+      const slotCandidates = [
+        slot.label,
+        slot.displayTime,
+        slot.displayTime.replace(/\s+/g, ''),
+        `${slot.startTime}-${slot.endTime}`,
+        `${slot.startTime} - ${slot.endTime}`,
+        `Slot ${slot.id}`,
+        `Slot${slot.id}`,
+      ];
+      const normalizedSlotCandidates = slotCandidates.map(normalizeSlotLabel);
+      const matchesSlotName = normalizedSlotCandidates.includes(normalizedBookingSlotName);
+      const matchesSlotString = normalizedSlotCandidates.includes(normalizedBookingSlot);
+      const matchesSlotId = typeof booking.slotId === 'number' && booking.slotId === slot.id;
+      const matchesTimes =
+        normalizeTime(booking.startTime) === slot.startTime &&
+        normalizeTime(booking.endTime) === slot.endTime;
+      const matchesSlot = matchesSlotId || matchesSlotString || matchesSlotName || matchesTimes;
       
       const matchesCampus = selectedCampus === 'all' || booking.campus === selectedCampus;
       
@@ -155,7 +195,6 @@ export function useAdminScheduleView() {
           bookingDate: booking.date,
           dateKey,
           bookingTimeSlot: booking.timeSlot,
-          slotValue: slot.value,
           slotLabel: slot.label,
           matchesSlot,
           matchesCampus,
@@ -180,6 +219,7 @@ export function useAdminScheduleView() {
     setSelectedCampus,
     bookings,
     loading,
+    timeSlots,
     selectedSlotBookings,
     isDialogOpen,
     setIsDialogOpen,

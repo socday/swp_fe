@@ -48,6 +48,7 @@ export interface GetFacilityResponse {
   typeName: string;
   imageUrl?: string;
   status: string;
+  facilityAssets?: FacilityAsset[];
 }
 
 export interface FacilityCreateRequest {
