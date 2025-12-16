@@ -27,11 +27,15 @@ import {
   type StaffCancelRequest,
   type User,
   type UserResponse,
+  type Facility,
+  type FacilityTypeDto,
+  type FacilityCreateRequest,
 } from './api/types';
 import authController from './api/controllers/authController';
 import bookingsController from './api/controllers/bookingsController';
 import campusesController from './api/controllers/campusesController';
 import facilitiesController from './api/controllers/facilitiesController';
+import facilityTypesController from './api/controllers/facilityTypesController';
 import notificationsController from './api/controllers/notificationsController';
 import reportsController from './api/controllers/reportsController';
 import slotsController from './api/controllers/slotsController';
@@ -101,6 +105,17 @@ const adaptUserData = (backend: BackendUserLike): UserData => {
     createdAt: backend.createdAt || new Date().toISOString(),
   };
 };
+
+// ============================================================================
+// ADMIN ANALYTICS TYPES
+// ============================================================================
+
+export interface AdvancedAnalytics {
+  totalApprovedBookings: number;
+  topRooms: { roomName: string; count: number; campus: string }[];
+  topSlots: { slot: string; count: number }[];
+  topCategories: { category: string; count: number }[];
+}
 
 // ============================================================================
 // AUTH API
@@ -408,22 +423,98 @@ export const facilityToRoom = (facility: FrontendFacility): Room => ({
   images: facility.imageUrl ? [facility.imageUrl] : [],
 });
 
+const campusToId = (campus: Room['campus'] | undefined): number => {
+  return campus === 'NVH' ? 2 : 1;
+};
+
+const ensureFacilityTypeId = async (typeName: string): Promise<number | null> => {
+  try {
+    const types = await facilityTypesController.getFacilityTypes();
+    const existing = types.find(
+      (t) => t.typeName.toLowerCase() === typeName.toLowerCase()
+    );
+    if (existing?.typeId) return existing.typeId;
+
+    // Create then refetch to obtain the ID
+    await facilityTypesController.createFacilityType({ typeName } as FacilityTypeDto);
+    const refreshed = await facilityTypesController.getFacilityTypes();
+    const created = refreshed.find(
+      (t) => t.typeName.toLowerCase() === typeName.toLowerCase()
+    );
+    return created?.typeId ?? null;
+  } catch (error) {
+    console.error('Error ensuring facility type:', error);
+    return null;
+  }
+};
+
+const toFacilityPayload = async (
+  room: Omit<Room, 'id'> & { id?: string },
+  overrideImageUrl?: string | null
+): Promise<FacilityCreateRequest & { status: string }> => {
+  const typeId = await ensureFacilityTypeId(room.category);
+  if (!typeId) {
+    throw new Error('Unable to resolve facility type');
+  }
+  return {
+    facilityName: room.name,
+    campusId: campusToId(room.campus),
+    typeId,
+    imageUrl: overrideImageUrl ?? room.images?.[0],
+    status: room.status,
+  };
+};
+
 export const roomsApi = {
   async getAll(): Promise<Room[]> {
     const facilities = await facilitiesApi.getAll();
     return facilities.map(facilityToRoom);
   },
   async create(room: Omit<Room, 'id'>): Promise<string | null> {
-    console.warn('roomsApi.create() called but not implemented for backend');
-    return null;
+    try {
+      const payload = await toFacilityPayload(room);
+      await facilitiesController.createFacility(payload);
+
+      // Attempt to find the newly created facility by name + campus
+      const facilities = await facilitiesController.getFacilities({
+        name: payload.facilityName,
+        campusId: payload.campusId,
+      });
+      const created = facilities.find(
+        (f: Facility) =>
+          f.facilityName === payload.facilityName && f.campusId === payload.campusId
+      );
+      return created?.facilityId?.toString() ?? null;
+    } catch (error) {
+      console.error('Error creating room:', error);
+      return null;
+    }
   },
   async update(id: string, room: Partial<Room>): Promise<boolean> {
-    console.warn('roomsApi.update() called but not implemented for backend');
-    return false;
+    try {
+      const numericId = parseInt(id, 10);
+      if (Number.isNaN(numericId)) throw new Error('Invalid room id');
+      if (!room.name || !room.category || !room.status) {
+        throw new Error('Missing required room fields for update');
+      }
+      const payload = await toFacilityPayload(room as Room);
+      await facilitiesController.updateFacility(numericId, payload);
+      return true;
+    } catch (error) {
+      console.error('Error updating room:', error);
+      return false;
+    }
   },
   async delete(id: string): Promise<boolean> {
-    console.warn('roomsApi.delete() called but not implemented for backend');
-    return false;
+    try {
+      const numericId = parseInt(id, 10);
+      if (Number.isNaN(numericId)) throw new Error('Invalid room id');
+      await facilitiesController.deleteFacility(numericId);
+      return true;
+    } catch (error) {
+      console.error('Error deleting room:', error);
+      return false;
+    }
   },
 };
 
@@ -474,7 +565,6 @@ export const adminApi = {
       return items.map((item) =>
         adaptUserData({
           ...item,
-          role: { roleName: item.roleName },
         })
       );
     } catch (error) {
@@ -519,25 +609,148 @@ export const adminApi = {
   },
 
   async getAdvancedAnalytics(_period?: string, _campus?: string): Promise<any> {
-    console.warn('adminApi.getAdvancedAnalytics() not implemented for backend');
-    return {
-      totalBookings: 0,
-      totalUsers: 0,
-      totalRooms: 0,
-      averageUtilization: 0,
-      peakHours: [],
-      popularRooms: [],
-    };
+    try {
+      const [bookingData, facilitiesData, slotsData] = await Promise.all([
+        bookingsController.getBookings(),
+        facilitiesController.getFacilities(),
+        slotsController.getSlots(),
+      ]);
+
+      const facilities = adaptFacilities(facilitiesData || []);
+      const slots = adaptSlots(slotsData || []);
+      const bookings = Array.isArray((bookingData as any)?.items)
+        ? adaptBookings((bookingData as any).items || [])
+        : adaptBookings((bookingData as Booking[]) || []);
+
+      const campusFilterId =
+        _campus === 'NVH' ? 2 : _campus === 'FU_FPT' ? 1 : undefined;
+
+      const facilityById = new Map<number, FrontendFacility>();
+      facilities.forEach((f) => facilityById.set(f.id, f));
+      const slotById = new Map<number, FrontendSlot>();
+      slots.forEach((s) => slotById.set(s.id, s));
+
+      const approved = bookings.filter(
+        (b) => (b.status || '').toLowerCase() === 'approved'
+      );
+      const filteredBookings = campusFilterId
+        ? approved.filter((b) => facilityById.get(b.facilityId)?.campusId === campusFilterId)
+        : approved;
+
+      // Top rooms
+      const roomCount = new Map<number, number>();
+      filteredBookings.forEach((b) => {
+        roomCount.set(b.facilityId, (roomCount.get(b.facilityId) || 0) + 1);
+      });
+      const topRooms = Array.from(roomCount.entries())
+        .map(([facilityId, count]) => {
+          const facility = facilityById.get(facilityId);
+          return {
+            roomName: facility?.name || `Room ${facilityId}`,
+            count,
+            campus: facility?.campusId === 2 ? 'NVH' : 'FU_FPT',
+          };
+        })
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      // Top slots
+      const slotCount = new Map<number, number>();
+      filteredBookings.forEach((b) => {
+        slotCount.set(b.slotId, (slotCount.get(b.slotId) || 0) + 1);
+      });
+      const topSlots = Array.from(slotCount.entries())
+        .map(([slotId, count]) => {
+          const slot = slotById.get(slotId);
+          const label = slot?.name
+            ? slot.name
+            : slot?.startTime && slot?.endTime
+            ? `${slot.startTime}-${slot.endTime}`
+            : `Slot ${slotId}`;
+          return { slot: label, count };
+        })
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      // Top categories (room type)
+      const categoryCount = new Map<string, number>();
+      filteredBookings.forEach((b) => {
+        const facility = facilityById.get(b.facilityId);
+        const category = facility?.typeName || 'Unknown';
+        categoryCount.set(category, (categoryCount.get(category) || 0) + 1);
+      });
+      const topCategories = Array.from(categoryCount.entries())
+        .map(([category, count]) => ({ category, count }))
+        .sort((a, b) => b.count - a.count);
+
+      const result: AdvancedAnalytics = {
+        totalApprovedBookings: filteredBookings.length,
+        topRooms,
+        topSlots,
+        topCategories,
+      };
+
+      return result;
+    } catch (error) {
+      console.error('Error fetching advanced analytics:', error);
+      return {
+        totalApprovedBookings: 0,
+        topRooms: [],
+        topSlots: [],
+        topCategories: [],
+      };
+    }
   },
 
   async addRoomImage(_roomId: string | number, _imageUrl: string): Promise<boolean> {
-    console.warn('adminApi.addRoomImage() not implemented for backend');
-    return false;
+    try {
+      const id = typeof _roomId === 'string' ? parseInt(_roomId, 10) : _roomId;
+      if (Number.isNaN(id)) throw new Error('Invalid room id');
+      const facilities = await facilitiesController.getFacilities();
+      const target = facilities.find((f) => f.facilityId === id);
+      if (!target) throw new Error('Facility not found');
+
+      const typeId = target.typeId || (await ensureFacilityTypeId(target.type?.typeName || 'Classroom'));
+      if (!typeId) throw new Error('Unable to resolve facility type');
+
+      await facilitiesController.updateFacility(id, {
+        facilityName: target.facilityName,
+        campusId: target.campusId,
+        typeId,
+        imageUrl: _imageUrl,
+        status: target.status || 'Active',
+      });
+      return true;
+    } catch (error) {
+      console.error('Error adding room image:', error);
+      return false;
+    }
   },
 
   async deleteRoomImage(_roomId: string | number, _imageUrl: string): Promise<boolean> {
-    console.warn('adminApi.deleteRoomImage() not implemented for backend');
-    return false;
+    try {
+      const id = typeof _roomId === 'string' ? parseInt(_roomId, 10) : _roomId;
+      if (Number.isNaN(id)) throw new Error('Invalid room id');
+      const facilities = await facilitiesController.getFacilities();
+      const target = facilities.find((f) => f.facilityId === id);
+      if (!target) throw new Error('Facility not found');
+
+      const typeId = target.typeId || (await ensureFacilityTypeId(target.type?.typeName || 'Classroom'));
+      if (!typeId) throw new Error('Unable to resolve facility type');
+
+      // Removing image => set to undefined/null
+      await facilitiesController.updateFacility(id, {
+        facilityName: target.facilityName,
+        campusId: target.campusId,
+        typeId,
+        imageUrl: undefined,
+        status: target.status || 'Active',
+      });
+      return true;
+    } catch (error) {
+      console.error('Error deleting room image:', error);
+      return false;
+    }
   },
 };
 
