@@ -9,6 +9,8 @@ import {
   Report,
 } from "../../api/api";
 import { User } from "../../App";
+import type { FrontendReport } from "../../api/apiAdapters";
+import { reportsApi } from "../../api/services/reportsApi";
 
 export function useSecurityDashboard(user: User) {
   // UI tab state
@@ -32,11 +34,19 @@ export function useSecurityDashboard(user: User) {
   const [reportSeverity, setReportSeverity] =
     useState<Report["severity"]>("Medium");
   const [reportDescription, setReportDescription] = useState("");
+  const [reports, setReports] = useState<FrontendReport[]>([]);
+
+  const loadReports = async () => {
+  setLoading(true);
+  setReports(await reportsApi.getAll());
+  setLoading(false);
+  };
 
   useEffect(() => {
     if (activeTab === "tasks") loadTasks();
     if (activeTab === "schedule") loadApprovedBookings();
     if (activeTab === "inspection") loadRooms();
+    if (activeTab === "reports") loadReports();  
   }, [activeTab]);
 
   const loadTasks = async () => {
@@ -173,6 +183,8 @@ export function useSecurityDashboard(user: User) {
     reportDescription,
     setReportDescription,
 
+    reports,
+
     // Functions
     loadTasks,
     loadRooms,
@@ -181,5 +193,6 @@ export function useSecurityDashboard(user: User) {
     handleCompleteTask,
     handleSubmitReport,
     getTaskIcon,
+    loadReports,
   };
 }
