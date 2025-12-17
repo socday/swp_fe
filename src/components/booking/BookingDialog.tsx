@@ -8,7 +8,7 @@ import { Clock, CheckCircle2, X, CalendarDays } from "lucide-react";
 import { RoomImageGallery } from "../shared/RoomImageGallery";
 import { getRoomImages } from "../../api/roomImages";
 
-import { Room } from "../../api/api";
+import { type Room } from "../../api/api";
 
 import { useBookingDialog } from "./useBookingDialog";
 

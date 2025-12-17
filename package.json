@@ -2,6 +2,7 @@
       "name": "Multi-campus Facility Booking System",
       "version": "0.1.0",
       "private": true,
+      "type": "module",
       "dependencies": {
             "@jsr/supabase__supabase-js": "^2.49.8",
             "@radix-ui/react-accordion": "^1.2.3",
@@ -49,6 +50,7 @@
             "recharts": "^2.15.2",
             "sonner": "^2.0.3",
             "tailwind-merge": "*",
+            "typescript": "^5.9.3",
             "vaul": "^1.1.2"
       },
       "devDependencies": {
