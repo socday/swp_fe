@@ -1,33 +1,42 @@
-// Report domain contracts
+import { apiClient } from '../../httpClient';
+import type {
+  ApiMessageResponse,
+  CompleteTaskRequest,
+  CreateUserRequest,
+  SecurityTask,
+} from '../types';
 
-import type { Booking } from './bookingTypes';
-import type { Facility } from './facilityTypes';
-import type { User } from './userTypes';
+export const securityTaskController = {
+  // Assign task (Admin / Manager / FacilityAdmin)
+  async assignTask(payload: CreateUserRequest): Promise<ApiMessageResponse> {
+    const { data } = await apiClient.post<ApiMessageResponse>(
+      '/SecurityTask/assign',
+      payload
+    );
+    return data;
+  },
 
-export interface Report {
-  reportId: number;
-  userId: number;
-  facilityId?: number;
-  bookingId?: number;
-  title: string;
-  description: string;
-  status: string;
-  reportType: string;
-  createdAt?: string;
-  resolvedAt?: string;
-  user?: User;
-  facility?: Facility;
-  booking?: Booking;
-}
+  // Get pending tasks
+  async getPendingTasks(): Promise<SecurityTask[]> {
+    const { data } = await apiClient.get<SecurityTask[]>(
+      '/SecurityTask/pending'
+    );
+    return data;
+  },
 
-export interface ReportCreateRequest {
-  bookingId?: number;
-  facilityId: number;
-  title: string;
-  description: string;
-  reportType: string;
-}
+  // Complete task (Security)
+  async completeTask(
+    taskId: number,
+    payload?: CompleteTaskRequest
+  ): Promise<ApiMessageResponse> {
+    const { data } = await apiClient.put<ApiMessageResponse>(
+      `/SecurityTask/complete/${taskId}`,
+      {
+        reportNote: payload?.reportNote ?? 'Đã hoàn thành',
+      }
+    );
+    return data;
+  },
+};
 
-export interface ReportStatusUpdate {
-  status: string;
-}
+export default securityTaskController;

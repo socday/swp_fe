@@ -60,9 +60,10 @@ export function useSecurityDashboard(user: User) {
   const handleCompleteTask = async () => {
     if (!selectedTask) return;
     const success = await securityApi.completeTask(
-      selectedTask.id,
+      selectedTask.taskId, 
       completionNotes
     );
+
 
     if (success) {
       toast.success("Task marked as completed");
