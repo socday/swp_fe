@@ -74,11 +74,9 @@ export function ScheduleView({ userId }: ScheduleViewProps) {
         <div className="space-y-4">
           {/* Week navigation */}
           <div className="flex items-center justify-between">
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button variant="outline" size="sm" onClick={goToPreviousWeek}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-            </motion.div>
+            <Button variant="outline" size="sm" onClick={goToPreviousWeek}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
 
             <h3 className="text-center font-medium">
               {weekDates[0].toLocaleDateString("en-US", {
@@ -93,11 +91,9 @@ export function ScheduleView({ userId }: ScheduleViewProps) {
               })}
             </h3>
 
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button variant="outline" size="sm" onClick={goToNextWeek}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </motion.div>
+            <Button variant="outline" size="sm" onClick={goToNextWeek}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
 
           {/* Schedule grid */}
@@ -134,15 +130,11 @@ export function ScheduleView({ userId }: ScheduleViewProps) {
               </div>
 
               {/* Time slot rows */}
-              {timeSlots.map((slot, slotIdx) => (
-                <motion.div
+              {timeSlots.map((slot) => (
+                <div
                   key={slot.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: slotIdx * 0.05 }}
                   className="grid grid-cols-8 gap-1 mb-1"
                 >
-                  {/* Slot label */}
                   <div className="p-2 border bg-gray-50 rounded">
                     <div className="text-xs">{slot.label}</div>
                     <div className="text-[10px] text-gray-600">
@@ -150,43 +142,32 @@ export function ScheduleView({ userId }: ScheduleViewProps) {
                     </div>
                   </div>
 
-                  {/* Day cells */}
                   {weekDates.map((date, dayIdx) => {
-                    const isToday =
-                      formatDateKey(new Date()) === formatDateKey(date);
-
-                    const bookingsForSlot = getBookingsForDateAndSlot(
-                      date,
-                      slot.id
-                    );
+                    const bookingsForSlot =
+                      getBookingsForDateAndSlot(date, slot.id);
 
                     return (
                       <div
                         key={dayIdx}
-                        className={`p-1 min-h-[60px] border rounded ${
-                          isToday ? "bg-orange-50/50" : "bg-white"
-                        }`}
+                        className="p-1 min-h-[60px] border rounded bg-white"
                       >
                         <div className="space-y-1">
                           {bookingsForSlot.map((bk) => (
-                            <motion.div
+                            <div
                               key={bk.id}
-                              initial={{ scale: 0.8, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              whileHover={{ scale: 1.05 }}
-                              className={`p-1 rounded border text-[10px] truncate cursor-default ${getEventColor(
+                              className={`p-1 rounded border text-[10px] truncate ${getEventColor(
                                 bk
                               )}`}
                               title={`${bk.facilityName} - ${bk.purpose ?? ""}`}
                             >
-                              <div>{bk.facilityName}</div>
-                            </motion.div>
+                              {bk.facilityName}
+                            </div>
                           ))}
                         </div>
                       </div>
                     );
                   })}
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>

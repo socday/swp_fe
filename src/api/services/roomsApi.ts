@@ -115,11 +115,19 @@ const facilityResponseToRoom = (facility: GetFacilityResponse): Room => {
 const toFacilityPayload = async (
   room: Omit<Room, 'id'> & { id?: string },
   overrideImageUrl?: string | null
-): Promise<FacilityCreateRequest & { status: string }> => {
+): Promise<FacilityCreateRequest & { status: string; facilityCapacity?: number }> => {
   const typeId = await ensureFacilityTypeId(room.category);
   if (!typeId) {
     throw new Error('Unable to resolve facility type');
   }
+
+  // Map frontend statuses to backend expected values
+  const mapStatusForBackend = (status?: Room['status']): string => {
+    if (!status) return 'Disabled';
+    if (status === 'Inactive') return 'Disabled';
+    if (status === 'Active') return 'Available';
+    return status; // e.g., Maintenance -> Maintenance
+  };
 
   return {
     facilityName: room.name,
@@ -127,7 +135,9 @@ const toFacilityPayload = async (
     typeId,
     capacity: room.capacity ?? 0,
     imageUrl: overrideImageUrl ?? room.images?.[0],
-      status: mapRoomStatusToFacilityStatus(room.status),
+    status: mapStatusForBackend(room.status),
+    // include capacity so updates create correct facilityCapacity on backend
+    facilityCapacity: typeof room.capacity === 'string' ? Number(room.capacity) : room.capacity,
   };
 };  
 
@@ -149,18 +159,20 @@ export const roomsApi = {
   },
 
   async update(id: string, room: Partial<Room>): Promise<boolean> {
+    const numericId = parseInt(id, 10);
+    if (Number.isNaN(numericId)) throw new Error('Invalid room id');
+    if (!room.name || !room.category || !room.status) {
+      throw new Error('Missing required room fields for update');
+    }
+
+    const payload = await toFacilityPayload(room as Room);
     try {
-      const numericId = parseInt(id, 10);
-      if (Number.isNaN(numericId)) throw new Error('Invalid room id');
-      if (!room.name || !room.category || !room.status) {
-        throw new Error('Missing required room fields for update');
-      }
-      const payload = await toFacilityPayload(room as Room);
       await facilitiesController.updateFacility(numericId, payload);
       return true;
-    } catch (error) {
-      console.error('Error updating room:', error);
-      return false;
+    } catch (error: any) {
+      // Re-throw the error so callers can inspect response/status
+      console.error('Error updating room (rethrowing):', error?.response || error);
+      throw error;
     }
   },
 
