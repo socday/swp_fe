@@ -1,6 +1,7 @@
 import { type FrontendBooking, type FrontendReport } from '../apiAdapters';
 import { bookingsApi } from './bookingsApi';
 import { reportsApi } from './reportsApi';
+import { SecurityTask, securityTasksApi } from './securityTasksApi';
 
 export const staffApi = {
   async getPendingBookings(): Promise<FrontendBooking[]> {
@@ -9,9 +10,8 @@ export const staffApi = {
   async getBookingHistory(): Promise<FrontendBooking[]> {
     return bookingsApi.getAll();
   },
-  async getSecurityTasks(): Promise<any[]> {
-    console.warn('staffApi.getSecurityTasks() not implemented for backend');
-    return [];
+  async getSecurityTasks(): Promise<SecurityTask[]> {
+    return securityTasksApi.getPendingTasks();  
   },
   async getReports(): Promise<FrontendReport[]> {
     return reportsApi.getAll();

@@ -57,19 +57,19 @@ export interface FrontendBooking {
 }
 
 export interface FrontendReport {
-  id: number;
-  userId: number;
-  facilityId?: number;
-  bookingId?: number;
+  reportId: number;
   title: string;
   description: string;
-  status: string;
   reportType: string;
-  createdAt?: string;
+  status: string;
+  createdAt: string; // Required based on your JSON
+  createdBy: string; // Mapped from your email field
+  facilityName: string;
+  
+  // Optional/Nullable fields based on previous structure
+  facilityId?: number;
+  bookingId?: number;
   resolvedAt?: string;
-  // Populated
-  userName?: string;
-  facilityName?: string;
 }
 
 export interface FrontendNotification {
