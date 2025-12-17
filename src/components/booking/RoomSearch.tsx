@@ -31,6 +31,8 @@ import { RoomImageGallery } from "../shared/RoomImageGallery";
 import { getRoomImages } from "../../api/roomImages";
 
 import { useRoomSearch } from "./useRoomSearch";
+import { bookingsApi } from "../../api/services/bookingsApi";
+import { toast } from "sonner";
 
 interface RoomSearchProps {
   userRole: "student" | "lecturer" | "admin";
@@ -66,6 +68,9 @@ export function RoomSearch({ userRole }: RoomSearchProps) {
 
     selectedSlotId,
     setSelectedSlotId,
+
+    purpose,
+    setPurpose,
 
     selectedRoom,
     setSelectedRoom,
@@ -246,6 +251,25 @@ export function RoomSearch({ userRole }: RoomSearchProps) {
               </div>
             )}
           </div>
+
+          {/* START: Purpose Field Added */}
+          {selectedDate && (
+            <div className="space-y-2 lg:col-span-full">
+              <Label className="flex items-center gap-1">
+                Purpose <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                placeholder="Enter the purpose of your booking (e.g., Team Meeting, Study Group, Class Lecture)"
+                value={purpose}
+                onChange={(e) => setPurpose(e.target.value)}
+                maxLength={255} // Optional: Add a max length
+                required // Mark as HTML required
+              />
+              <p className="text-xs text-gray-500">
+                A clear purpose is required for all bookings.
+              </p>
+            </div>
+          )}
 {/* 
           {selectedDate && availableSlots.length > 0 && (
             <div className="space-y-2">
@@ -347,12 +371,32 @@ export function RoomSearch({ userRole }: RoomSearchProps) {
                           </div>
 
                           <Button
-                            className="w-full bg-orange-500 hover:bg-orange-600"
-                            onClick={() => setSelectedRoom(room)}
-                          >
-                            <Calendar className="h-4 w-4 mr-2" />
-                            Book Room
-                          </Button>
+  className="w-full bg-orange-500 hover:bg-orange-600"
+  onClick={async () => {
+    // Immediate Validation
+    if (!selectedSlotId || selectedSlotId === 'all' || !purpose) {
+      alert("Please select a specific Slot and enter a Purpose in the filters above.");
+      return;
+    }
+    
+    // Immediate Call
+    const result = await bookingsApi.create({
+      facilityId: room.id,
+      date: selectedDate,
+      slotId: parseInt(selectedSlotId),
+      purpose: purpose,
+    });
+    
+    if(result.success) {
+        toast.success(result.message);
+    } else {
+        toast.error("Error: " + result.error);
+    }
+  }}
+>
+  <Calendar className="h-4 w-4 mr-2" />
+  Book Room
+</Button>
                         </CardContent>
                       </Card>
                     );
@@ -370,14 +414,6 @@ export function RoomSearch({ userRole }: RoomSearchProps) {
         </CardContent>
       </Card>
 
-      {/* {selectedRoom && (
-        <BookingDialog
-          room={selectedRoom}
-          open={true}
-          userRole={userRole}
-          onClose={() => setSelectedRoom(null)}
-        />
-      )} */}
     </>
   );
 }

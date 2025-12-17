@@ -31,7 +31,7 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 max-w-md">
+          <TabsList className="grid w-full grid-cols-2 max-w-md">
             <TabsTrigger
               value="search"
               className="data-[state=active]:border-2 data-[state=active]:border-orange-500"
@@ -46,12 +46,12 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
               My Bookings
             </TabsTrigger>
 
-            <TabsTrigger
+            {/* <TabsTrigger
               value="schedule"
               className="data-[state=active]:border-2 data-[state=active]:border-orange-500"
             >
               Schedule
-            </TabsTrigger>
+            </TabsTrigger> */}
           </TabsList>
 
           <TabsContent value="search" className="mt-6">
@@ -62,9 +62,9 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
             <MyBookings userId={user.id} />
           </TabsContent>
 
-          <TabsContent value="schedule" className="mt-6">
+          {/* <TabsContent value="schedule" className="mt-6">
             <ScheduleView userId={user.id} />
-          </TabsContent>
+          </TabsContent> */}
         </Tabs>
       </main>
 

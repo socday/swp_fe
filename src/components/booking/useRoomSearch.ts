@@ -26,6 +26,7 @@ export function useRoomSearch() {
   const [minCapacity, setMinCapacity] = useState("");
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [selectedDate, setSelectedDate] = useState("");
+  const [purpose, setPurpose] = useState("");
   const [selectedSlotId, setSelectedSlotId] = useState("all");
   const [facilityTypes, setFacilityTypes] = useState<FacilityType[]>([]);
   const [campusTypes, setCampusTypes] = useState<CampusDto[]>([]);
@@ -173,6 +174,9 @@ export function useRoomSearch() {
 
     minCapacity,
     setMinCapacity,
+
+    purpose,
+    setPurpose,
 
     selectedDate,
     setSelectedDate,
