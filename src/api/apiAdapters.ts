@@ -6,7 +6,7 @@
  * 
  * This file ensures all API responses are transformed to match frontend expectations
  */
-
+import { REPORT_TYPES } from './api/types/reportTypes';
 import type { Campus, Facility, Slot, Booking, Report, Notification, GetBookingRepsonse, GetFacilityResponse } from './api/types';
 
 // ============================================================================
@@ -60,7 +60,7 @@ export interface FrontendReport {
   reportId: number;
   title: string;
   description: string;
-  reportType: string;
+  reportType: ReportType;
   status: string;
   createdAt: string; // Required based on your JSON
   createdBy: string; // Mapped from your email field
@@ -154,18 +154,17 @@ export function adaptBooking(backend: GetBookingRepsonse): FrontendBooking {
  */
 export function adaptReport(backend: Report): FrontendReport {
   return {
-    id: backend.reportId,
-    userId: backend.userId,
-    facilityId: backend.facilityId,
-    bookingId: backend.bookingId,
+   reportId: backend.reportId,
     title: backend.title,
     description: backend.description,
-    status: backend.status,
     reportType: backend.reportType,
+    status: backend.status,
     createdAt: backend.createdAt,
+    createdBy: backend.user?.fullName ?? '',
+    facilityName: backend.facility?.facilityName ?? '',
+    facilityId: backend.facilityId,
+    bookingId: backend.bookingId,
     resolvedAt: backend.resolvedAt,
-    userName: backend.user?.fullName,
-    facilityName: backend.facility?.facilityName,
   };
 }
 
@@ -241,7 +240,7 @@ export function toBackendReport(frontend: {
   facilityId: number;
   title: string;
   description: string;
-  reportType: string;
+  reportType: string; 
   bookingId?: number;
 }) {
   return {
@@ -252,3 +251,4 @@ export function toBackendReport(frontend: {
     bookingId: frontend.bookingId,
   };
 }
+

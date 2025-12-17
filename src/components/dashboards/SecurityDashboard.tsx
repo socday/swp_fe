@@ -62,7 +62,7 @@ export function SecurityDashboard({ user, onLogout }) {
 
         {/* Tabs */}
         <Tabs value={s.activeTab} onValueChange={s.setActiveTab}>
-          <TabsList className="grid grid-cols-3 w-full">
+          <TabsList className="grid grid-cols-4 w-full">
             <TabsTrigger value="tasks" className="data-[state=active]:border-2 border-orange-500">
               <Shield className="w-4 h-4 mr-1" />
               My Tasks
@@ -76,6 +76,10 @@ export function SecurityDashboard({ user, onLogout }) {
             <TabsTrigger value="inspection" className="data-[state=active]:border-2 border-orange-500">
               <FileText className="w-4 h-4 mr-1" />
               Room Inspection
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="data-[state=active]:border-2 border-orange-500">
+              <FileText className="w-4 h-4 mr-1" />
+              My Reports
             </TabsTrigger>
           </TabsList>
 
@@ -168,6 +172,45 @@ export function SecurityDashboard({ user, onLogout }) {
               </CardHeader>
               <CardContent>
                 <AdminScheduleView />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* TAB: Reports */}
+          <TabsContent value="reports">
+            <Card>
+              <CardHeader>
+                <CardTitle>My Reports</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {s.loading ? (
+                  <div className="text-center py-8">Loading reports...</div>
+                ) : s.reports.length === 0 ? (
+                  <div className="text-center py-8">No reports submitted</div>
+                ) : (
+                  <Table className="table-fixed w-full">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Created At</TableHead>
+                      </TableRow>
+                    </TableHeader>
+
+                    <TableBody>
+                      {s.reports.map(report => (
+                        <TableRow key={report.reportId}>
+                          <TableCell>{report.title}</TableCell>
+                          <TableCell>{report.description}</TableCell>
+                          <TableCell>{report.reportType}</TableCell>
+                          <TableCell>{report.status}</TableCell>
+                          <TableCell>{new Date(report.createdAt).toLocaleString()}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>)}
               </CardContent>
             </Card>
           </TabsContent>
