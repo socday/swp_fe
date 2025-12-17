@@ -49,6 +49,9 @@ export function RoomSearch({ userRole }: RoomSearchProps) {
     selectedCampus,
     setSelectedCampus,
 
+    campusTypes,
+    setCampusTypes,
+
     facilityTypes,
     setFacilityTypes,
 
@@ -122,53 +125,65 @@ export function RoomSearch({ userRole }: RoomSearchProps) {
 
             {/* Campus */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-1">
-                Campus <span className="text-red-500">*</span>
-              </Label>
-              <Select
-                value={selectedCampus || undefined}
-                onValueChange={setSelectedCampus}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="FU_FPT">
-                    FU FPT Campus
-                  </SelectItem>
-                  <SelectItem value="NVH">
-                    NVH Campus
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+            <Label className="flex items-center gap-1">
+              Campus <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              // Ensure value is a string, or undefined if empty
+              value={selectedCampus || undefined} 
+              // The returned value is already a string, so no need to convert it here
+              onValueChange={setSelectedCampus} 
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select..." />
+              </SelectTrigger> 
+              <SelectContent>
+                {campusTypes.map((campus) => (
+                  console.log('Rendering campus:', campus),
+                    <SelectItem
+                      key={String(campus.id)} 
+                      value={String(campus.id)} 
+                    >
+                     {campus.name} {/* Use campusName, as per CampusDto */}
+                    </SelectItem>
+                ))}
+                {campusTypes.length === 0 && (
+                    <SelectItem value="loading" disabled>
+                      Loading campuses...
+                    </SelectItem>
+                )}
+            </SelectContent>
+            </Select>
             </div>
 
             {/* Category */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1 items-start">
+            <div className="space-y-2"> 
+              <Label className="flex items-center gap-1">
                 Category <span className="text-red-500">*</span>
               </Label>
               <Select
-                value={selectedCategoryId !== null ? String(selectedCategoryId) : undefined}
-                onValueChange={(value) => setSelectedCategoryId(Number(value))}
+                // Ensure value is a string
+                value={selectedCategoryId || undefined}
+                onValueChange={(value) => setSelectedCategoryId(value)} 
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select..." />
+                    <SelectValue placeholder="Select..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {facilityTypes.map((facilityType) => (
-                    <SelectItem
-                      key={facilityType.typeId}
-                      value={String(facilityType.typeId)}
-                    >
-                      {facilityType.typeName}
-                    </SelectItem>
-                  ))}
-                  {facilityTypes.length === 0 && (
-                    <SelectItem value="loading" disabled>
-                      Loading categories...
-                    </SelectItem>
-                  )}
+                    {facilityTypes.map((facilityType) => (
+                  console.log('Rendering facilityType:', facilityType),
+                      <SelectItem
+                        key={facilityType.facilityId}
+                        value={String(facilityType.facilityId)}
+                      >
+                        {facilityType.typeName}
+                      </SelectItem>
+                    ))}
+                    {facilityTypes.length === 0 && (
+                      <SelectItem value="loading" disabled>
+                        Loading categories...
+                      </SelectItem>
+                    )}
                 </SelectContent>
               </Select>
             </div>
@@ -204,7 +219,7 @@ export function RoomSearch({ userRole }: RoomSearchProps) {
             {selectedDate && (
               <div className="space-y-2">
                 <Label className="flex items-center gap-1">
-                  Preferred Slot <span className="text-xs font-normal text-gray-500">(optional)</span>
+                  Preferred Slot <span className="text-xs font-normal text-gray-500"></span>
                 </Label>
                 <Select
                   value={selectedSlotId}
@@ -231,7 +246,7 @@ export function RoomSearch({ userRole }: RoomSearchProps) {
               </div>
             )}
           </div>
-
+{/* 
           {selectedDate && availableSlots.length > 0 && (
             <div className="space-y-2">
               <Label className="flex items-center gap-2 text-gray-700">
@@ -245,7 +260,7 @@ export function RoomSearch({ userRole }: RoomSearchProps) {
                 ))}
               </div>
             </div>
-          )}
+          )} */}
 
           {!filtersReady && (
             <div className="flex items-start gap-3 rounded-md border border-dashed border-orange-300 bg-orange-50 p-4 text-sm text-orange-700">
@@ -355,14 +370,14 @@ export function RoomSearch({ userRole }: RoomSearchProps) {
         </CardContent>
       </Card>
 
-      {selectedRoom && (
+      {/* {selectedRoom && (
         <BookingDialog
           room={selectedRoom}
           open={true}
           userRole={userRole}
           onClose={() => setSelectedRoom(null)}
         />
-      )}
+      )} */}
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { roomsApi, Room, slotsApi, FacilityType, facilitiesApi } from "../../api/api";
+import { roomsApi, Room, slotsApi, FacilityType, facilitiesApi, CampusDto, campusesApi } from "../../api/api";
 import type { FrontendSlot } from "../../api/apiAdapters";
 
 const getCurrentTimeString = () => {
@@ -16,8 +16,9 @@ const isTodayDate = (value: string) => {
 
 export function useRoomSearch() {
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [slots, setSlots] = useState<FrontendSlot[]>([]);
+  const [availableSlots, setAvailableSlots] = useState<FrontendSlot[]>([]);
   const [loading, setLoading] = useState(false);
+  const [allActiveSlots, setAllActiveSlots] = useState<FrontendSlot[]>([]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCampus, setSelectedCampus] = useState("");
@@ -27,6 +28,7 @@ export function useRoomSearch() {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedSlotId, setSelectedSlotId] = useState("all");
   const [facilityTypes, setFacilityTypes] = useState<FacilityType[]>([]);
+  const [campusTypes, setCampusTypes] = useState<CampusDto[]>([]);
 
   const filtersReady = Boolean(
     selectedCampus &&
@@ -38,34 +40,70 @@ export function useRoomSearch() {
   useEffect(() => {
   const fetchFacilityTypes = async () => {
     try {
-      const data = await facilitiesApi.getAllFacilityTypes(); 
+
+      const data = await facilitiesApi.getAll(); 
       setFacilityTypes(data);
+      console.log('Fetched facility types:', data);
     } catch (error) {
       console.error('Error fetching facility types:', error);
     }
   };
+    fetchFacilityTypes();
+  }, []);
 
-  fetchFacilityTypes();
-}, []);
+
+  useEffect(() => {
+  const fetchCampusTypes = async () => {
+    try {
+      const data = await campusesApi.getAll(); 
+      setCampusTypes(data);
+      console.log('Fetched campus types:', data);
+    } catch (error) {
+      console.error('Error fetching campus types:', error);
+    }
+  };
+    fetchCampusTypes();
+  }, []);
+  
   useEffect(() => {
     let isMounted = true;
 
     slotsApi
-      .getAll()
+      .getAvailable(undefined, selectedDate)
       .then((slotData) => {
         if (!isMounted) return;
-        setSlots(slotData.filter((slot) => slot.isActive));
+        const baseSlots = slotData.filter((slot) => !slot.isActive);
+        setAllActiveSlots(slotData.filter((slot) => !slot.isActive));
+        const currentTime = getCurrentTimeString();
+        const now = new Date();
+
+        const isToday = new Date(selectedDate).toDateString() === now.toDateString();
+        const finalAvailableSlots = baseSlots.filter((slot) => {
+          // If the date is in the future, show all slots
+          if (!isToday) return true;
+
+          // If it is Today, we filter:
+          // We assume slot.startTime is "HH:mm" or "HH:mm:ss". 
+          // We slice(0, 5) to ensure we compare "HH:mm" with "HH:mm"
+          const slotStart = slot.startTime.substring(0, 5);
+          
+          // KEEP if slotStart is greater than currentTime
+          return slotStart > currentTime;
+        });
+        setAvailableSlots(finalAvailableSlots);
+        console.log("Fetched slots:", finalAvailableSlots);
       })
       .catch((error) => {
         console.error("Failed to load slots", error);
         if (!isMounted) return;
-        setSlots([]);
+        setAllActiveSlots([]);
+        setAvailableSlots([]);
       });
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [selectedDate]);
 
   useEffect(() => {
     if (!filtersReady) {
@@ -105,39 +143,9 @@ export function useRoomSearch() {
     }
   }, [selectedDate]);
 
-  const availableSlots = useMemo(() => {
-    if (!selectedDate) return [];
-    if (isTodayDate(selectedDate)) {
-      const currentTime = getCurrentTimeString();
-      return slots.filter((slot) => slot.startTime > currentTime);
-    }
-    return slots;
-  }, [slots, selectedDate]);
 
-  useEffect(() => {
-    if (selectedSlotId === "all") return;
-    const exists = availableSlots.some((slot) => slot.id.toString() === selectedSlotId);
-    if (!exists) {
-      setSelectedSlotId("all");
-    }
-  }, [availableSlots, selectedSlotId]);
 
-  const minCapacityNumber = parseInt(minCapacity, 10);
-  const filteredRooms = filtersReady ? rooms.filter((room) => {
-    if (!room?.name || !room?.building) return false;
-
-    const matchesSearch =
-      room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      room.building.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesCampus = room.campus === selectedCampus;
-    // 🛑 CHECK ROOM'S facilityTypeId AGAINST selectedCategoryId
-    const matchesCategory = room.facilityTypeId === selectedCategoryId; 
-    const matchesCapacity = Number.isNaN(minCapacityNumber) || room.capacity >= minCapacityNumber;
-    const matchesStatus = room.status === "Active";
-
-    return matchesSearch && matchesCampus && matchesCategory && matchesCapacity && matchesStatus;
-  }) : [];
+  const filteredRooms = filtersReady ? rooms : [];
 
   return {
     loading,
@@ -145,11 +153,17 @@ export function useRoomSearch() {
     availableSlots,
     filtersReady,
 
+    allActiveSlots,
+    setAllActiveSlots,
+
     searchTerm,
     setSearchTerm,
 
     facilityTypes,
     setFacilityTypes,
+
+    campusTypes,
+    setCampusTypes,
 
     selectedCampus,
     setSelectedCampus,
