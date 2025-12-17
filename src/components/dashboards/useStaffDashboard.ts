@@ -8,7 +8,9 @@ import {
   Room,
   SecurityTask,
   Report,
+  securityTasksApi,
 } from "../../api/api";
+import { BookingForSecurityTask } from "../../api/services/securityTasksApi";
 
 export function useStaffDashboard() {
   const [activeTab, setActiveTab] = useState("approvals");
@@ -86,7 +88,7 @@ export function useStaffDashboard() {
   const normalizeBookingId = (rawId: string | number): number =>
     typeof rawId === "string" ? parseInt(rawId, 10) : rawId;
 
-  const handleApproveBooking = async (id: string | number) => {
+  const handleApproveBooking = async (id: string | number, booking: Booking) => {
     const numericId = normalizeBookingId(id);
     if (Number.isNaN(numericId)) {
       toast.error("Invalid booking identifier");
@@ -98,17 +100,25 @@ export function useStaffDashboard() {
       toast.success(result.message || "Booking approved successfully");
       loadPendingBookings();
 
-      const booking = pendingBookings.find((b) => b.id === numericId);
-      if (booking) {
-        await staffApi.createSecurityTask({
-          bookingId: numericId,
-          roomName: booking.roomName,
-          date: booking.date,
-          startTime: booking.startTime,
-          endTime: booking.endTime,
-          type: "unlock_room",
-        });
-      }
+      const bookingContext = booking;
+        console.log("Booking context for security task assignment:", bookingContext);
+          if (!bookingContext) {
+            console.warn('Unable to find booking for security task assignment');
+            return;
+          }
+      
+          try {
+            const assignment = await securityTasksApi.autoAssignForBooking(
+            );
+            if (assignment.success) {
+              toast.success(assignment.message || 'Security task assigned');
+            } else if (assignment.error) {
+              toast.error(assignment.error);
+            }
+          } catch (error) {
+            console.error('Security task auto-assignment failed:', error);
+            toast.error('Security task assignment failed');
+          }
     } else toast.error(result.error || "Failed to approve booking");
   };
 

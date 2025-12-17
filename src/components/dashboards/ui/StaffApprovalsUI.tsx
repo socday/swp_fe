@@ -9,7 +9,7 @@ import { Booking } from "../../../api/api";
 interface StaffApprovalsUIProps {
   pendingBookings: Booking[];
   loading: boolean;
-  handleApproveBooking: (id: string | number) => void;
+  handleApproveBooking: (id: string | number, booking: Booking) => void;
   handleRejectBooking: (id: string | number) => void;
 }
 
@@ -150,7 +150,7 @@ export function StaffApprovalsUI({
                     {/* Action Buttons */}
                     <div className="flex gap-2">
                       <Button
-                        onClick={() => handleApproveBooking(booking.id)}
+                        onClick={() => handleApproveBooking(booking.id, booking)}
                         className="flex-1 bg-green-500 hover:bg-green-600"
                       >
                         <Check className="h-4 w-4 mr-2" />

@@ -18,3 +18,26 @@ export interface SecurityTask {
 export interface CompleteTaskRequest {
   reportNote?: string;
 }
+
+export interface createSecurityTask {
+  title: string;
+  description: string;
+  priority: string;      
+  assignedToId: number;
+}
+
+export interface CreateTaskRequest {
+  title: string;
+  description?: string;
+  priority?: string;
+  assignedToId?: number;
+  bookingId?: number;
+  roomId?: number;
+  roomName?: string;
+  campus?: string;
+  date?: string;
+  startTime?: string;
+  endTime?: string;
+  taskType?: string;
+}
+

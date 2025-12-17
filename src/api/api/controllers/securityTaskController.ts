@@ -2,11 +2,11 @@ import { apiClient } from '../../httpClient';
 import type {
   ApiMessageResponse,
   CompleteTaskRequest,
+  CreateTaskRequest,
   SecurityTask,
 } from '../types';
 
 export const securityTaskController = {
-  // 🔹 Get all / pending security tasks
   async getPendingTasks(): Promise<SecurityTask[]> {
     const { data } = await apiClient.get<SecurityTask[]>(
       '/SecurityTask/pending'
@@ -14,7 +14,6 @@ export const securityTaskController = {
     return data;
   },
 
-  // 🔹 Confirm / complete task
   async completeTask(
     taskId: number,
     payload?: CompleteTaskRequest
@@ -26,6 +25,10 @@ export const securityTaskController = {
       }
     );
 
+    return data;
+  },
+  async assignTask(payload: CreateTaskRequest): Promise<ApiMessageResponse> {
+    const { data } = await apiClient.post<ApiMessageResponse>('/SecurityTask/assign', payload);
     return data;
   },
 };
