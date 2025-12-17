@@ -7,23 +7,20 @@ import { motion } from "motion/react";
 import { Clock, CheckCircle2, X, CalendarDays } from "lucide-react";
 import { RoomImageGallery } from "../shared/RoomImageGallery";
 import { getRoomImages } from "../../api/roomImages";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Checkbox } from "../ui/checkbox";
 
 import { type Room } from "../../api/api";
 
-import { useBookingDialog, type RecurrencePattern } from "./useBookingDialog";
+import { useBookingDialog } from "./useBookingDialog";
 
 interface BookingDialogProps {
   room: Room;
   open: boolean;
-  userRole: "student" | "lecturer" | "admin" | "staff" | "security";
-  initialDate?: string; // ISO date string from parent (e.g., "2025-12-17")
+  userRole: "student" | "lecturer" | "admin";
   onClose: () => void;
   onSuccess?: () => void;
 }
 
-export function BookingDialog({ room, open, userRole, initialDate, onClose, onSuccess }: BookingDialogProps) {
+export function BookingDialog({ room, open, userRole, onClose, onSuccess }: BookingDialogProps) {
   const {
     date,
     setDate,
@@ -36,41 +33,17 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
     handleSubmit,
     bookingType,
     setBookingType,
-    startDate,
-    setStartDate,
-    endDate,
-    setEndDate,
-    recurrencePattern,
-    setRecurrencePattern,
+    semesterStart,
+    setSemesterStart,
+    semesterEnd,
+    setSemesterEnd,
     selectedDays,
     handleDayToggle,
-    interval,
-    setInterval,
-    autoFindAlternative,
-    setAutoFindAlternative,
-    skipConflicts,
-    setSkipConflicts,
     availableSlots,
-    allSlots,
-    convertToVietnameseDay,
-  } = useBookingDialog(room, initialDate, onSuccess, onClose, userRole);
+  } = useBookingDialog(room, onSuccess, onClose, userRole);
 
+  // Lấy images từ local data thay vì từ API
   const roomImages = getRoomImages(room.id);
-
-  // Use allSlots for recurring bookings, availableSlots for single bookings
-  const displaySlots = bookingType === "recurring" ? allSlots : availableSlots;
-
-  const getRecurrencePatternLabel = (pattern: RecurrencePattern) => {
-    const labels = {
-      1: "Daily",
-      2: "Weekly",
-      3: "Weekdays",
-      4: "Weekends",
-      5: "Monthly",
-      6: "Custom",
-    };
-    return labels[pattern];
-  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -84,7 +57,7 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
 
         <form onSubmit={handleSubmit}>
           <div className="space-y-6 py-4">
-            {/* Room Images */}
+            {/* Room Images - Lấy từ local asset */}
             {roomImages.length > 0 && (
               <div>
                 <Label>Room Photos</Label>
@@ -98,8 +71,8 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
               </div>
             )}
 
-            {/* Booking Type - For Lecturer, Staff, and Admin */}
-            {(userRole === "lecturer" || userRole === "admin" || userRole === "staff") && (
+            {/* Booking Type - Only for Lecturer */}
+            {userRole === "lecturer" && (
               <div className="space-y-3">
                 <Label className="flex items-center gap-2">
                   <CalendarDays className="h-4 w-4" />
@@ -123,114 +96,53 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
                   
                   <button
                     type="button"
-                    onClick={() => setBookingType("recurring")}
+                    onClick={() => setBookingType("semester")}
                     className={`p-4 rounded-lg border-2 text-left ${
-                      bookingType === "recurring"
+                      bookingType === "semester"
                         ? "border-orange-500 bg-orange-50"
                         : "border-gray-200 bg-white hover:border-orange-300"
                     }`}
                   >
-                    <div className={`font-semibold ${bookingType === "recurring" ? "text-orange-900" : "text-gray-900"}`}>
-                      Recurring Booking
+                    <div className={`font-semibold ${bookingType === "semester" ? "text-orange-900" : "text-gray-900"}`}>
+                      Semester (3 Months)
                     </div>
-                    <div className="text-sm text-gray-600 mt-1">Daily, Weekly, or Custom pattern</div>
+                    <div className="text-sm text-gray-600 mt-1">Recurring weekly booking</div>
                   </button>
                 </div>
               </div>
             )}
 
             {/* Date Selector */}
-            {bookingType === "single" ? (
-              userRole !== "student" ? (
-                <div className="space-y-2">
-                  <Label>Select Date</Label>
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
-                    className="rounded-md border w-full"
-                  />
-                </div>
-              ) : (
-                date && (
-                  <div className="space-y-2">
-                    <Label>Booking Date</Label>
-                    <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
-                      <p className="text-lg font-semibold text-gray-900">
-                        {date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                      </p>
-                    </div>
-                  </div>
-                )
-              )
-            ) : (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Start Date</Label>
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    onSelect={setStartDate}
-                    disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
-                    className="rounded-md border w-full"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>End Date</Label>
-                  <Calendar
-                    mode="single"
-                    selected={endDate}
-                    onSelect={setEndDate}
-                    disabled={(d) => !startDate || d < startDate}
-                    className="rounded-md border w-full"
-                  />
-                  {startDate && endDate && (
-                    <p className="text-sm text-gray-600">
-                      Duration: {Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))} days
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label>{bookingType === "semester" ? "Semester Start Date" : "Select Date"}</Label>
+              <Calendar
+                mode="single"
+                selected={bookingType === "semester" ? semesterStart : date}
+                onSelect={bookingType === "semester" ? setSemesterStart : setDate}
+                disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+                className="rounded-md border w-full"
+              />
+              {bookingType === "semester" && semesterStart && (
+                <p className="text-sm text-gray-600">
+                  Semester ends: {semesterEnd?.toLocaleDateString()} (3 months from start)
+                </p>
+              )}
+            </div>
 
-            {/* Recurrence Pattern - Only for Recurring */}
-            {bookingType === "recurring" && (userRole === "lecturer" || userRole === "staff" || userRole === "admin") && (
+            {/* Recurring Days - Only for Semester Booking */}
+            {bookingType === "semester" && userRole === "lecturer" && (
               <div className="space-y-3">
-                <Label>Recurrence Pattern</Label>
-                <Select
-                  value={recurrencePattern.toString()}
-                  onValueChange={(value) => setRecurrencePattern(parseInt(value) as RecurrencePattern)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Daily - Repeat every day</SelectItem>
-                    <SelectItem value="2">Weekly - Repeat every week</SelectItem>
-                    <SelectItem value="3">Weekdays - Monday to Friday only</SelectItem>
-                    <SelectItem value="4">Weekends - Saturday and Sunday only</SelectItem>
-                    <SelectItem value="5">Monthly - Same date each month</SelectItem>
-                    <SelectItem value="6">Custom - Choose specific days</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Custom Days - Only for Custom Pattern */}
-            {bookingType === "recurring" && recurrencePattern === 6 && (userRole === "lecturer" || userRole === "staff" || userRole === "admin") && (
-              <div className="space-y-3">
-                <Label>Select Days (Vietnamese format)</Label>
+                <Label>Select Recurring Days</Label>
                 <p className="text-sm text-gray-600">Choose which days of the week to repeat this booking</p>
                 <div className="grid grid-cols-7 gap-2">
                   {[
-                    { id: 2, label: "Mon", full: "Monday" },
-                    { id: 3, label: "Tue", full: "Tuesday" },
-                    { id: 4, label: "Wed", full: "Wednesday" },
-                    { id: 5, label: "Thu", full: "Thursday" },
-                    { id: 6, label: "Fri", full: "Friday" },
-                    { id: 7, label: "Sat", full: "Saturday" },
-                    { id: 8, label: "Sun", full: "Sunday" },
+                    { id: 1, label: "Mon", full: "Monday" },
+                    { id: 2, label: "Tue", full: "Tuesday" },
+                    { id: 3, label: "Wed", full: "Wednesday" },
+                    { id: 4, label: "Thu", full: "Thursday" },
+                    { id: 5, label: "Fri", full: "Friday" },
+                    { id: 6, label: "Sat", full: "Saturday" },
+                    { id: 0, label: "Sun", full: "Sunday" },
                   ].map((day) => {
                     const isSelected = selectedDays.includes(day.id);
                     return (
@@ -258,69 +170,16 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
               </div>
             )}
 
-            {/* Advanced Options - Only for Recurring */}
-            {bookingType === "recurring" && (userRole === "lecturer" || userRole === "staff" || userRole === "admin") && (
-              <div className="space-y-4 border-t pt-4">
-                <Label className="text-base font-semibold">Advanced Options</Label>
-                
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="autoFindAlternative"
-                    checked={autoFindAlternative}
-                    onCheckedChange={(checked) => setAutoFindAlternative(checked as boolean)}
-                  />
-                  <label
-                    htmlFor="autoFindAlternative"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Auto-find alternative rooms if unavailable
-                  </label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="skipConflicts"
-                    checked={skipConflicts}
-                    onCheckedChange={(checked) => setSkipConflicts(checked as boolean)}
-                  />
-                  <label
-                    htmlFor="skipConflicts"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Skip conflicting dates instead of failing entire booking
-                  </label>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="interval">Interval (repeat every X {getRecurrencePatternLabel(recurrencePattern).toLowerCase()})</Label>
-                  <Select
-                    value={interval.toString()}
-                    onValueChange={(value) => setInterval(parseInt(value))}
-                  >
-                    <SelectTrigger id="interval">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1 (every occurrence)</SelectItem>
-                      <SelectItem value="2">2 (every other occurrence)</SelectItem>
-                      <SelectItem value="3">3</SelectItem>
-                      <SelectItem value="4">4</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-
             {/* Time Slots */}
             <div className="space-y-3">
               <Label className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
-                Select Time Slots das (Multiple Selection)
+                Select Time Slots (Multiple Selection)
               </Label>
 
-              {allSlots.length > 0 ? (
+              {availableSlots.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {allSlots.map((slot, index) => {
+                  {availableSlots.map((slot, index) => {
                     const isSelected = selectedSlots.some((s) => s.id === slot.id);
                     return (
                       <motion.div
@@ -414,7 +273,6 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
                 value={purpose}
                 onChange={(e) => setPurpose(e.target.value)}
                 rows={4}
-                required
               />
             </div>
           </div>
@@ -427,8 +285,8 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
             <Button type="submit" className="bg-orange-500 hover:bg-orange-600" disabled={submitting}>
               {submitting 
                 ? "Submitting..." 
-                : bookingType === "recurring"
-                ? `Submit Recurring Booking (${selectedSlots.length} slot${selectedSlots.length > 1 ? "s" : ""})`
+                : bookingType === "semester" && selectedDays.length > 0
+                ? `Submit Semester Booking (${selectedDays.length} days/week × ${selectedSlots.length} slot${selectedSlots.length > 1 ? "s" : ""})`
                 : `Submit ${selectedSlots.length} Booking Request${selectedSlots.length > 1 ? "s" : ""}`
               }
             </Button>

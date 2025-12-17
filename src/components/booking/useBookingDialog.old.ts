@@ -1,58 +1,52 @@
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { bookingsApi } from "../../api/api";
-import { slotsApi } from "../../api/services/slotsApi";
+import { bookingsApi, slotsApi } from "../../api/api";
 import { User } from "../../App";
-import { TimeSlot } from "../../api/timeSlots";
+import { TimeSlot, fetchTimeSlots, getCachedTimeSlots } from "../../api/timeSlots";
 import { Room } from "../../api/api";
-
-export type RecurrencePattern = 1 | 2 | 3 | 4 | 5 | 6; // Daily=1, Weekly=2, Weekdays=3, Weekends=4, Monthly=5, Custom=6
+import { adaptSlots } from "../../api/apiAdapters";
 
 export function useBookingDialog(
   room: Room,
-  initialDate?: string, // ISO date string like "2025-12-17"
   onSuccess?: () => void,
   onClose?: () => void,
-  userRole?: "student" | "lecturer" | "admin" | "staff" | "security",
+  userRole?: "student" | "lecturer" | "admin"
 ) {
-  // Initialize date from initialDate string to avoid timezone issues
-  const [date, setDate] = useState<Date | undefined>(() => {
-    if (initialDate) {
-      // Parse as local date to avoid timezone offset
-      const [year, month, day] = initialDate.split('-').map(Number);
-      return new Date(year, month - 1, day);
-    }
-    return new Date();
-  });
+  const [date, setDate] = useState<Date | undefined>(new Date());
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
   const [purpose, setPurpose] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [allSlots, setAllSlots] = useState<TimeSlot[]>([]);
+  const [allSlots, setAllSlots] = useState<TimeSlot[]>(getCachedTimeSlots());
   const [loadingSlots, setLoadingSlots] = useState(false);
 
-  // Booking type states
-  const [bookingType, setBookingType] = useState<"single" | "recurring">("single");
-  
-  // Recurring booking states
-  const [startDate, setStartDate] = useState<Date | undefined>(new Date());
-  const [endDate, setEndDate] = useState<Date | undefined>();
-  const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern>(2); // Default to Weekly
-  const [selectedDays, setSelectedDays] = useState<number[]>([]); // 2-8 for Mon-Sun (Vietnamese format)
-  const [interval, setInterval] = useState<number>(1);
-  const [autoFindAlternative, setAutoFindAlternative] = useState<boolean>(true);
-  const [skipConflicts, setSkipConflicts] = useState<boolean>(true);
+  // Semester booking states
+  const [bookingType, setBookingType] = useState<"single" | "semester">("single");
+  const [semesterStart, setSemesterStart] = useState<Date | undefined>(new Date());
+  const [semesterEnd, setSemesterEnd] = useState<Date | undefined>();
+  const [selectedDays, setSelectedDays] = useState<number[]>([]);
 
-  // Fetch slots based on booking type
+  // Calculate semester end date (3 months from start)
+  useEffect(() => {
+    if (semesterStart) {
+      const endDate = new Date(semesterStart);
+      endDate.setMonth(endDate.getMonth() + 3);
+      setSemesterEnd(endDate);
+    }
+  }, [semesterStart]);
+
+  // Fetch available slots based on facilityId and date
   useEffect(() => {
     let isMounted = true;
 
-    const fetchSlots = async () => {
+    const fetchAvailableSlots = async () => {
       setLoadingSlots(true);
       try {
-        // For recurring bookings, fetch all slots instead of available slots
-        if (bookingType === "recurring") {
-          const apiSlots = await slotsApi.getAll();
-          console.log('Fetched all slots for recurring booking:', apiSlots);
+        const facilityId = normaliseRoomId(room.id);
+        const dateStr = date ? toIsoDate(date) : undefined;
+        
+        if (facilityId && !Number.isNaN(facilityId) && dateStr) {
+          // Fetch available slots from API with facilityId and date
+          const apiSlots = await slotsApi.getAvailable(facilityId, dateStr);
           const timeSlots: TimeSlot[] = apiSlots.map(slot => ({
             id: slot.id,
             label: slot.name || `Slot ${slot.id}`,
@@ -62,37 +56,19 @@ export function useBookingDialog(
           }));
           
           if (isMounted) {
-            setAllSlots(timeSlots);
+            setAllSlots(timeSlots.length > 0 ? timeSlots : getCachedTimeSlots());
           }
         } else {
-          // For single bookings, fetch available slots for the specific facility and date
-          const facilityId = normaliseRoomId(room.id);
-          const dateStr = date ? toIsoDate(date) : undefined;
-          
-          if (facilityId && !Number.isNaN(facilityId) && dateStr) {
-            const apiSlots = await slotsApi.getAvailable(facilityId, dateStr);
-            console.log('Fetched available slots from API:', apiSlots);
-            const timeSlots: TimeSlot[] = apiSlots.map(slot => ({
-              id: slot.id,
-              label: slot.name || `Slot ${slot.id}`,
-              startTime: slot.startTime || '',
-              endTime: slot.endTime || '',
-              displayTime: slot.startTime && slot.endTime ? `${slot.startTime} - ${slot.endTime}` : '',
-            }));
-            
-            if (isMounted) {
-              setAllSlots(timeSlots);
-            }
-          } else {
-            if (isMounted) {
-              setAllSlots([]);
-            }
+          // Fallback to all slots if no facilityId or date
+          const slots = await fetchTimeSlots();
+          if (isMounted) {
+            setAllSlots(slots);
           }
         }
       } catch (error) {
-        console.error('Failed to fetch slots:', error);
+        console.error('Failed to fetch available slots:', error);
         if (isMounted) {
-          setAllSlots([]);
+          setAllSlots(getCachedTimeSlots());
         }
       } finally {
         if (isMounted) {
@@ -101,11 +77,12 @@ export function useBookingDialog(
       }
     };
 
+    fetchAvailableSlots();
 
     return () => {
       isMounted = false;
     };
-  }, [room.id, date, bookingType]);
+  }, [room.id, date]);
 
   const getCurrentUser = (): User | null => {
     const s = localStorage.getItem("currentUser");
@@ -137,11 +114,8 @@ export function useBookingDialog(
     setSelectedSlots([]);
     setPurpose("");
     setBookingType("single");
-    setStartDate(new Date());
-    setEndDate(undefined);
+    setSemesterStart(new Date());
     setSelectedDays([]);
-    setRecurrencePattern(2);
-    setInterval(1);
   };
 
   const normaliseRoomId = (roomId: string) => {
@@ -153,12 +127,7 @@ export function useBookingDialog(
     return digits ? parseInt(digits[0], 10) : NaN;
   };
 
-  const toIsoDate = (value: Date) => {
-    const year = value.getFullYear();
-    const month = String(value.getMonth() + 1).padStart(2, '0');
-    const day = String(value.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  const toIsoDate = (value: Date) => value.toISOString().split("T")[0];
 
   const isToday = (value?: Date) => {
     if (!value) return false;
@@ -191,11 +160,6 @@ export function useBookingDialog(
       setSelectedSlots((prev) => prev.filter((slot) => visibleIds.has(slot.id)));
     }
   }, [availableSlots, bookingType, date]);
-
-  // Convert standard day (0=Sun, 1=Mon) to Vietnamese format (2=Mon, 8=Sun)
-  const convertToVietnameseDay = (standardDay: number): number => {
-    return standardDay === 0 ? 8 : standardDay + 1;
-  };
 
   const submitSingleBookings = async (facilityId: number) => {
     const targetDate = toIsoDate(date!);
@@ -233,27 +197,10 @@ export function useBookingDialog(
     }
   };
 
-  const submitRecurringBookings = async (facilityId: number) => {
-    const startDateStr = toIsoDate(startDate!);
-    const endDateStr = toIsoDate(endDate!);
-
-    // Determine daysOfWeek based on recurrence pattern
-    let daysOfWeek: number[] = [];
-    if (recurrencePattern === 6) {
-      // Custom pattern - use selected days
-      daysOfWeek = selectedDays;
-    } else if (recurrencePattern === 2) {
-      // Weekly pattern - use the day of week from start date
-      const dayOfWeek = startDate!.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
-      daysOfWeek = [dayOfWeek === 0 ? 8 : dayOfWeek + 1]; // Convert to Vietnamese format (2-8)
-    } else if (recurrencePattern === 3) {
-      // Weekdays - Monday to Friday (2-6 in Vietnamese format)
-      daysOfWeek = [2, 3, 4, 5, 6];
-    } else if (recurrencePattern === 4) {
-      // Weekends - Saturday and Sunday (7, 8 in Vietnamese format)
-      daysOfWeek = [7, 8];
-    }
-    // For Daily (1) and Monthly (5), daysOfWeek can be empty array
+  const submitSemesterBookings = async (facilityId: number) => {
+    const startDate = toIsoDate(semesterStart!);
+    const endDate = toIsoDate(semesterEnd!);
+    const normalizedDays = selectedDays.map((d) => (d === 0 ? 7 : d));
 
     const responses = await Promise.all(
       selectedSlots.map((slot) =>
@@ -261,14 +208,10 @@ export function useBookingDialog(
           .createRecurring({
             facilityId,
             slotId: slot.id,
-            purpose,
-            startDate: startDateStr,
-            endDate: endDateStr,
-            pattern: recurrencePattern,
-            daysOfWeek,
-            interval,
-            autoFindAlternative,
-            skipConflicts,
+            purpose: `[SEMESTER] ${purpose}`,
+            startDate,
+            endDate,
+            daysOfWeek: normalizedDays,
           })
           .then((result: any) => ({ success: true, message: result?.message }))
           .catch((error) => {
@@ -282,14 +225,18 @@ export function useBookingDialog(
     const failedResponse = responses.find((result) => !result?.success);
 
     if (successes.length === selectedSlots.length && !failedResponse) {
+      const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const daysStr = selectedDays
+        .map((day) => dayNames[day] ?? `Day ${day}`)
+        .join(", ");
       const successMessage = responses[0]?.message ||
-        `Recurring booking created! ${successes.length} booking set(s) scheduled.`;
+        `Semester booking created! ${successes.length} booking set(s) scheduled for ${daysStr}.`;
       toast.success(successMessage);
       resetForm();
       onSuccess?.();
       onClose?.();
     } else {
-      const failureMessage = failedResponse?.error || "Some recurring bookings could not be created. Please try again.";
+      const failureMessage = failedResponse?.error || "Some semester bookings could not be created. Please try again.";
       toast.error(failureMessage);
     }
   };
@@ -307,15 +254,9 @@ export function useBookingDialog(
         toast.error("Please fill in all fields and select at least one time slot");
         return;
       }
-    } else {
-      if (!startDate || !endDate || selectedSlots.length === 0 || !purpose) {
-        toast.error("Please fill in all fields and select time slots");
-        return;
-      }
-      if (recurrencePattern === 6 && selectedDays.length === 0) {
-        toast.error("Please select at least one day for custom recurring pattern");
-        return;
-      }
+    } else if (!semesterStart || !semesterEnd || selectedSlots.length === 0 || selectedDays.length === 0 || !purpose) {
+      toast.error("Please fill in all fields, pick recurring days, and select time slots");
+      return;
     }
 
     const facilityId = normaliseRoomId(room.id);
@@ -330,7 +271,7 @@ export function useBookingDialog(
       if (bookingType === "single") {
         await submitSingleBookings(facilityId);
       } else {
-        await submitRecurringBookings(facilityId);
+        await submitSemesterBookings(facilityId);
       }
     } catch (error) {
       console.error("Booking submission failed", error);
@@ -352,22 +293,12 @@ export function useBookingDialog(
     handleSubmit,
     bookingType,
     setBookingType,
-    startDate,
-    setStartDate,
-    endDate,
-    setEndDate,
-    recurrencePattern,
-    setRecurrencePattern,
+    semesterStart,
+    setSemesterStart,
+    semesterEnd,
+    setSemesterEnd,
     selectedDays,
     handleDayToggle,
-    interval,
-    setInterval,
-    autoFindAlternative,
-    setAutoFindAlternative,
-    skipConflicts,
-    setSkipConflicts,
     availableSlots,
-    allSlots,
-    convertToVietnameseDay,
   };
 }

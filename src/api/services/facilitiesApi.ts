@@ -4,11 +4,11 @@ import type { FacilityType, FacilityTypeDto, GetFacilityResponse } from '../api/
 import facilityTypesController from '../api/controllers/facilityTypesController';
 
 export interface FacilityFilters {
-  name?: string;
-  typeId?: number;
-  campusId?: number;
-  slotId?: number;
-  date?: string;
+  name?: string | undefined;
+  typeId?: number | undefined;
+  campusId?: number | undefined;
+  slotId?: number | undefined;
+  date?: string | undefined;
 }
 
 export const facilitiesApi = {

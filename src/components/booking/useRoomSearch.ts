@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { roomsApi, Room, slotsApi, FacilityType, facilitiesApi, CampusDto, campusesApi } from "../../api/api";
+import { roomsApi, Room, slotsApi, FacilityType, facilitiesApi, CampusDto, campusesApi, type FacilityFilters } from "../../api/api";
 import type { FrontendSlot } from "../../api/apiAdapters";
 
 const getCurrentTimeString = () => {
@@ -19,14 +19,12 @@ export function useRoomSearch() {
   const [availableSlots, setAvailableSlots] = useState<FrontendSlot[]>([]);
   const [loading, setLoading] = useState(false);
   const [allActiveSlots, setAllActiveSlots] = useState<FrontendSlot[]>([]);
-
+  const [allSlots, setAllSlots] = useState<FrontendSlot[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCampus, setSelectedCampus] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
-  const [minCapacity, setMinCapacity] = useState("");
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [selectedDate, setSelectedDate] = useState("");
-  const [purpose, setPurpose] = useState("");
   const [selectedSlotId, setSelectedSlotId] = useState("all");
   const [facilityTypes, setFacilityTypes] = useState<FacilityType[]>([]);
   const [campusTypes, setCampusTypes] = useState<CampusDto[]>([]);
@@ -34,15 +32,35 @@ export function useRoomSearch() {
   const filtersReady = Boolean(
     selectedCampus &&
     selectedCategoryId &&
-    selectedDate &&
-    minCapacity.trim()
+    selectedDate 
   );
+
+useEffect(() => {
+    let isMounted = true; 
+
+    slotsApi.getAll()
+      .then((slotData) => {
+        if (isMounted) {
+          setAllSlots(slotData || []);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load all slots:", error);
+        if (isMounted) {
+          setAllSlots([]);
+        }
+      });
+
+    return () => {
+      isMounted = false; // Cleanup function
+    };
+  }, []);
 
   useEffect(() => {
   const fetchFacilityTypes = async () => {
     try {
 
-      const data = await facilitiesApi.getAll(); 
+      const data = await facilitiesApi.getAllFacilityTypes(); 
       setFacilityTypes(data);
       console.log('Fetched facility types:', data);
     } catch (error) {
@@ -70,10 +88,11 @@ export function useRoomSearch() {
     let isMounted = true;
 
     slotsApi
-      .getAvailable(undefined, selectedDate)
+      .getAvailable()
       .then((slotData) => {
         if (!isMounted) return;
         const baseSlots = slotData.filter((slot) => !slot.isActive);
+        console.log("Base slots:", baseSlots);
         setAllActiveSlots(slotData.filter((slot) => !slot.isActive));
         const currentTime = getCurrentTimeString();
         const now = new Date();
@@ -116,9 +135,14 @@ export function useRoomSearch() {
 
     let isMounted = true;
     setLoading(true);
-
+    let filterParams: FacilityFilters = {
+      typeId: selectedCategoryId ? Number(selectedCategoryId) : undefined,
+      campusId: selectedCampus ? Number(selectedCampus) : undefined,
+      slotId: selectedSlotId && selectedSlotId !== "all" ? Number(selectedSlotId) : undefined,
+      date: selectedDate || undefined,
+    }
     roomsApi
-      .getAll()
+      .getAll(filterParams)
       .then((roomData) => {
         if (!isMounted) return;
         setRooms(roomData);
@@ -136,7 +160,7 @@ export function useRoomSearch() {
     return () => {
       isMounted = false;
     };
-  }, [filtersReady, selectedCampus, selectedCategoryId, selectedDate, minCapacity]);
+  }, [filtersReady, selectedCampus, selectedCategoryId, selectedDate]);
 
   useEffect(() => {
     if (!selectedDate) {
@@ -172,12 +196,6 @@ export function useRoomSearch() {
     selectedCategoryId,
     setSelectedCategoryId,
 
-    minCapacity,
-    setMinCapacity,
-
-    purpose,
-    setPurpose,
-
     selectedDate,
     setSelectedDate,
 
@@ -186,5 +204,8 @@ export function useRoomSearch() {
 
     selectedRoom,
     setSelectedRoom,
+
+    allSlots,
+    setAllSlots,
   };
 }

@@ -1,4 +1,4 @@
-import { facilitiesApi } from './facilitiesApi';
+import { facilitiesApi, type FacilityFilters } from './facilitiesApi';
 import { ensureFacilityTypeId } from './facilityHelpers';
 import { type FrontendFacility } from '../apiAdapters';
 import facilitiesController from '../api/controllers/facilitiesController';
@@ -132,8 +132,8 @@ const toFacilityPayload = async (
 };  
 
 export const roomsApi = {
-  async getAll(): Promise<Room[]> {
-    const facilities = await facilitiesApi.getAll();
+  async getAll(filters?: FacilityFilters): Promise<Room[]> {
+    const facilities = await facilitiesApi.getAll(filters);
     return facilities.map(facilityResponseToRoom);
   },
 
