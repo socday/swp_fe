@@ -45,6 +45,19 @@ const normalizeCategory = (raw?: string): Room['category'] => {
   const trimmed = raw.trim();
   return CATEGORY_MAP[trimmed] || 'Classroom';
 };
+const mapRoomStatusToFacilityStatus = (
+  status: Room['status']
+): string => {
+  switch (status) {
+    case 'Active':
+      return 'Available';        
+    case 'Maintenance':
+      return 'Maintenance';     
+    case 'Inactive':
+    default:
+      return 'Unavailable';   
+  }
+};
 
 const normalizeStatus = (raw?: string): Room['status'] => {
   if (!raw) return 'Inactive';
@@ -66,7 +79,7 @@ const campusIdFromName = (campus?: Room['campus']): number => (campus === 'NVH' 
 export const facilityToRoom = (facility: FrontendFacility): Room => ({
   id: facility.id.toString(),
   name: facility.name,
-  campus: campusNameFromId(facility.campusId),
+  campus: campusNameFromId(facility.id),
   building: facility.typeName || 'Unknown',
   floor: 1,
   capacity: facility.capacity,
@@ -112,10 +125,11 @@ const toFacilityPayload = async (
     facilityName: room.name,
     campusId: campusIdFromName(room.campus),
     typeId,
+    capacity: room.capacity ?? 0,
     imageUrl: overrideImageUrl ?? room.images?.[0],
-    status: room.status,
+      status: mapRoomStatusToFacilityStatus(room.status),
   };
-};
+};  
 
 export const roomsApi = {
   async getAll(): Promise<Room[]> {
@@ -127,15 +141,7 @@ export const roomsApi = {
     try {
       const payload = await toFacilityPayload(room);
       await facilitiesController.createFacility(payload);
-
-      const facilities = await facilitiesController.getFacilities({
-        name: payload.facilityName,
-        campusId: payload.campusId,
-      });
-      const created = facilities.find(
-        (f: Facility) => f.facilityName === payload.facilityName && f.campusId === payload.campusId
-      );
-      return created?.facilityId?.toString() ?? null;
+      return 'success';
     } catch (error) {
       console.error('Error creating room:', error);
       return null;
