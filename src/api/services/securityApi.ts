@@ -1,5 +1,5 @@
 import { type FrontendBooking } from '../apiAdapters';
-import type { Report, SecurityTask } from '../api/types';
+import type { SecurityTask } from '../api/types';
 import { bookingsApi } from './bookingsApi';
 import { reportsApi } from './reportsApi';
 import securityTaskController from '../api/controllers/securityTaskController';
