@@ -1,6 +1,7 @@
 import securityTaskController from '../api/controllers/securityTaskController';
 import usersController from '../api/controllers/usersController';
 import type {
+  createSecurityTask,
   CreateTaskRequest,
   SecurityTask,
   UserFilterRequest,
@@ -116,7 +117,7 @@ export const securityTasksApi = {
   },
 
   
-  async createSecurityTask(task: Omit<SecurityTask, "id">): Promise<boolean> {
+  async createSecurityTask(task: createSecurityTask): Promise<boolean> {
     try {
       await securityTaskController.assignTask(task);
       return true;
@@ -137,15 +138,11 @@ export const securityTasksApi = {
     }
   },
 
-  async autoAssignForBooking(booking: BookingForSecurityTask | undefined): Promise<{
+  async autoAssignForBooking(): Promise<{
     success: boolean;
-    message?: string;
     error?: string;
     assignedTo?: { id: number; name: string };
   }> {
-    if (!booking) {
-      return { success: false, error: 'Missing booking context for security task assignment' };
-    }
 
     const [staffMembers, pendingTasks] = await Promise.all([
       fetchSecurityStaff(),
@@ -161,29 +158,10 @@ export const securityTasksApi = {
       return { success: false, error: 'Unable to determine a security staff assignee' };
     }
 
-    const payload: CreateTaskRequest = {
-      title: buildTaskTitle(booking),
-      description: buildTaskDescription(booking),
-      priority: DEFAULT_TASK_PRIORITY,
-      assignedToId: assignee.userId,
-      bookingId: normalizeNumericId(booking.id),
-      roomId: normalizeNumericId(booking.roomId ?? undefined),
-      roomName: booking.roomName,
-      campus: booking.campus,
-      date: booking.date,
-      startTime: booking.startTime,
-      endTime: booking.endTime,
-      taskType: DEFAULT_TASK_TYPE,
-    };
 
-    const result = await securityTasksApi.assignTask(payload);
-    if (!result.success) {
-      return result;
-    }
 
     return {
       success: true,
-      message: result.message || `Security task assigned to ${assignee.fullName}`,
       assignedTo: {
         id: assignee.userId,
         name: assignee.fullName,

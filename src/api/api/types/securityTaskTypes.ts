@@ -22,7 +22,7 @@ export interface CompleteTaskRequest {
 export interface createSecurityTask {
   title: string;
   description: string;
-  priority: string;      
+  priority?: string;      
   assignedToId: number;
 }
 

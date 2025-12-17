@@ -39,6 +39,13 @@ export function useStaffDashboard() {
   const [reportResponse, setReportResponse] = useState("");
   const [reportStatus, setReportStatus] = useState<Report["status"]>("Reviewed");
 
+  //TASK SECURITY
+
+  const [newTaskTitle, setNewTaskTitle] = useState<string>("");
+  const [newTaskDescription, setNewTaskDescription] = useState<string>("");
+  const [newTaskPriority, setNewTaskPriority] = useState<string>("Normal");
+  const [newTaskAssignedTo, setNewTaskAssignedTo] = useState<string>("");
+
   // ========================= LOADERS ========================= //
   useEffect(() => {
     if (activeTab === "approvals") loadPendingBookings();
@@ -101,24 +108,27 @@ export function useStaffDashboard() {
       loadPendingBookings();
 
       const bookingContext = booking;
-        console.log("Booking context for security task assignment:", bookingContext);
-          if (!bookingContext) {
-            console.warn('Unable to find booking for security task assignment');
-            return;
-          }
-      
-          try {
-            const assignment = await securityTasksApi.autoAssignForBooking(
-            );
-            if (assignment.success) {
-              toast.success(assignment.message || 'Security task assigned');
-            } else if (assignment.error) {
-              toast.error(assignment.error);
-            }
-          } catch (error) {
-            console.error('Security task auto-assignment failed:', error);
-            toast.error('Security task assignment failed');
-          }
+      console.log("Booking context for security task assignment:", bookingContext);
+        if (!bookingContext) {
+          console.warn('Unable to find booking for security task assignment');
+          return;
+        }
+      const autoAssignResult = await securityTasksApi.autoAssignForBooking();
+      if (autoAssignResult.error) {
+        toast.error(`Security task auto-assignment failed: ${autoAssignResult.error}`);
+      }
+      else {
+        const success = await securityTasksApi.createSecurityTask({
+            title: `Security Task for Booking #${numericId}`,
+            description: `Auto-assigned open room security task for approved booking #${numericId}`,
+            priority: undefined,
+            assignedToId: autoAssignResult.assignedTo?.id ?? 0
+        })
+        if (success) {
+          toast.success(autoAssignResult.success);
+        }
+      }
+          
     } else toast.error(result.error || "Failed to approve booking");
   };
 
@@ -145,7 +155,6 @@ export function useStaffDashboard() {
     const success = await staffApi.cancelBooking(
       selectedBooking.id,
       cancelReason,
-      true
     );
 
     if (success) {
@@ -157,33 +166,45 @@ export function useStaffDashboard() {
     } else toast.error("Failed to cancel booking");
   };
 
-  const handleCreateSecurityTask = async () => {
-    if (!selectedRoom || !taskDate || !taskStartTime || !taskEndTime) {
-      toast.error("Please fill all fields");
+const handleCreateSecurityTask = async (newTaskTitle: string, newTaskDescription: string, newTaskPriority: string, newTaskAssignedTo: string) => {
+    console.log('Creating security task with:', { newTaskTitle, newTaskDescription, newTaskPriority, newTaskAssignedTo });
+    if (!newTaskTitle || !newTaskDescription || !newTaskAssignedTo) {
+      toast.error("Please fill all required fields (Title, Description, Assignee)");
       return;
     }
 
-    const room = rooms.find((r) => r.id === selectedRoom);
-    if (!room) return;
+    const assignedId = parseInt(newTaskAssignedTo);
+    
+    if (isNaN(assignedId)) {
+        toast.error("Invalid staff member selected");
+        return;
+    }
 
-    const success = await staffApi.createSecurityTask({
-      bookingId: "manual",
-      roomName: room.name,
-      date: taskDate,
-      startTime: taskStartTime,
-      endTime: taskEndTime,
-      type: taskType,
+    // 3. Call the API
+    const success = await securityTasksApi.createSecurityTask({
+      title: newTaskTitle,
+      description: newTaskDescription,
+      priority: newTaskPriority || "Normal", // Default to Normal if undefined
+      assignedToId: assignedId,
     });
 
+    // 4. Handle success/failure
     if (success) {
-      toast.success("Security task created");
-      setCreateTaskDialogOpen(false);
-      setSelectedRoom("");
-      setTaskDate("");
-      setTaskStartTime("");
-      setTaskEndTime("");
+      toast.success("Security task created successfully");
       loadSecurityTasks();
-    } else toast.error("Failed to create task");
+      setCreateTaskDialogOpen(false);
+      
+      // Optional: Reset form fields
+      setNewTaskTitle("");
+      setNewTaskDescription("");
+      setNewTaskPriority("Normal");
+      setNewTaskAssignedTo("");
+      
+      // Optional: Refresh your task list here
+      // fetchSecurityTasks(); 
+    } else {
+      toast.error("Failed to create task");
+    }
   };
 
   const handleReviewReport = async () => {
@@ -243,6 +264,16 @@ export function useStaffDashboard() {
     setReportResponse,
     reportStatus,
     setReportStatus,
+
+    // new security task fields
+    newTaskTitle,
+    setNewTaskTitle,
+    newTaskDescription,
+    setNewTaskDescription,
+    newTaskPriority,
+    setNewTaskPriority,
+    newTaskAssignedTo,
+    setNewTaskAssignedTo,
 
     // handlers
     handleApproveBooking,
