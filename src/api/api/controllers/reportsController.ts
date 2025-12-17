@@ -10,7 +10,7 @@ export const reportsController = {
   // Create report
   async createReport(payload: ReportCreateRequest): Promise<ApiMessageResponse> {
     const { data } = await apiClient.post<ApiMessageResponse>(
-      '/Report',
+      '/Reports',
       payload
     );
     return data;
@@ -19,7 +19,7 @@ export const reportsController = {
   // Get all reports
   async getReports(): Promise<Report[]> {
     const { data } = await apiClient.get<Report[]>(
-      '/Report'
+      '/Reports'
     );
     return data;
   },
@@ -30,7 +30,7 @@ export const reportsController = {
     payload: ReportStatusUpdate
   ): Promise<ApiMessageResponse> {
     const { data } = await apiClient.put<ApiMessageResponse>(
-      `/Report/${id}/status`,
+      `/Reports/${id}/status`,
       payload
     );
     return data;
