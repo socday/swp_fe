@@ -11,6 +11,16 @@ export const facilityAssetController = {
     const { data } = await apiClient.put<ApiMessageResponse>('/FacilityAsset/update-condition', payload);
     return data;
   },
+
+  async createFacilityAsset(payload: { facilityId: number; assetId: number; quantity?: number; condition?: string }): Promise<ApiMessageResponse> {
+    const { data } = await apiClient.post<ApiMessageResponse>('/FacilityAsset', payload);
+    return data;
+  },
+
+  async deleteFacilityAsset(id: number): Promise<ApiMessageResponse> {
+    const { data } = await apiClient.delete<ApiMessageResponse>(`/FacilityAsset/${id}`);
+    return data;
+  },
 };
 
 export default facilityAssetController;

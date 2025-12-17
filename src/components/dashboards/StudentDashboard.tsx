@@ -1,3 +1,4 @@
+import React from 'react';
 import { User } from "../../App";
 import { Header } from "../shared/Header";
 import { Footer } from "../shared/Footer";
@@ -46,25 +47,25 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
               My Bookings
             </TabsTrigger>
 
-            {/* <TabsTrigger
+            <TabsTrigger
               value="schedule"
               className="data-[state=active]:border-2 data-[state=active]:border-orange-500"
             >
               Schedule
-            </TabsTrigger> */}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="search" className="mt-6">
             <RoomSearch userRole="student" />
           </TabsContent>
 
-          <TabsContent value="bookings" className="mt-6">
-            <MyBookings userId={user.id} />
-          </TabsContent>
+          <TabsContent value="schedule" className="mt-6">
+  <ScheduleView userId={String(user.id)} />
+</TabsContent>
 
-          {/* <TabsContent value="schedule" className="mt-6">
+          <TabsContent value="schedule" className="mt-6">
             <ScheduleView userId={user.id} />
-          </TabsContent> */}
+          </TabsContent>
         </Tabs>
       </main>
 

@@ -60,6 +60,9 @@ apiClient.interceptors.response.use(
     const fallbackMessage = error.message || 'Unexpected API error';
     const payload = (error.response?.data as { message?: string; error?: string }) || {};
     const normalizedError = new Error(payload.message || payload.error || fallbackMessage);
+    // Attach status and raw response so callers can inspect HTTP status codes (e.g., 401)
+    (normalizedError as any).status = error.response?.status;
+    (normalizedError as any).response = error.response?.data;
     return Promise.reject(normalizedError);
   }
 );

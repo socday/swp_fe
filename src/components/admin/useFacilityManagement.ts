@@ -48,6 +48,20 @@ export function useFacilityManagement() {
     }
   };
 
+  // Update local room in state (used to keep 'inactive' rooms visible even if backend filters them out)
+  const updateLocalRoom = (updated: Room) => {
+    setRooms((prev) => {
+      const idx = prev.findIndex((r) => r.id === updated.id);
+      if (idx === -1) {
+        // add to list if missing
+        return [updated, ...prev];
+      }
+      const copy = [...prev];
+      copy[idx] = updated;
+      return copy;
+    });
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Active':
@@ -100,5 +114,6 @@ export function useFacilityManagement() {
     handleViewDetails,
     handleCloseDetails,
     loadRooms,
+    updateLocalRoom,
   };
 }
