@@ -55,6 +55,7 @@ export interface FacilityCreateRequest {
   facilityName: string;
   campusId: number;
   typeId: number;
+  capacity: number;   
   imageUrl?: string;
   status?: string;
 }

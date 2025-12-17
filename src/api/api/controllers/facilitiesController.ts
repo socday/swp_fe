@@ -1,7 +1,6 @@
 import { apiClient } from '../../httpClient';
 import type {
   ApiMessageResponse,
-  Facility,
   FacilityCreateRequest,
   FacilityUpdateRequest,
   GetFacilityResponse,
