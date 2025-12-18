@@ -60,7 +60,7 @@ const s = useStudentDashboard();
         </div>
 
         <Tabs value={s.activeTab} onValueChange={s.setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto">
+          <TabsList className="grid w-full grid-cols-3 max-w-md">
             <TabsTrigger
               value="search"
               className="data-[state=active]:border-2 data-[state=active]:border-orange-500"

@@ -92,12 +92,14 @@ export interface StaffCancelRequest {
 
 export interface RecurringBookingSummary {
   recurrenceGroupId: string; // UUID format
+  recurrenceId?: string; // Alias for recurrenceGroupId (for backwards compatibility)
   userId: number;
   userName: string;
   facilityId: number;
   facilityName: string;
   slotId: number;
   slotName: string;
+  patternName?: string; // Pattern name (e.g., "Daily", "Weekly")
   purpose: string;
   startDate: string; // ISO date format "YYYY-MM-DD"
   endDate: string;   // ISO date format "YYYY-MM-DD"

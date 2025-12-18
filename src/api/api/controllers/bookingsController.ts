@@ -14,7 +14,7 @@ import type {
 
 export const bookingsController = {
   async createBooking(payload: BookingCreateRequest): Promise<ApiMessageResponse> {
-    const { data } = await apiClient.post<ApiMessageResponse>('/Bookings', payload);
+    const { data } = await apiClient.post<ApiMessageResponse>('/Bookings', payload, {});
     return data;
   },
 
@@ -66,6 +66,12 @@ export const bookingsController = {
   async getBookingRecurrenceGroup (id?: number): Promise<RecurringBookingSummary[]>{
     const params = id ? { id } : undefined;
     const { data } = await apiClient.get<RecurringBookingSummary[]>('/Bookings/recurring-groups', { params });
+    return data;
+  },
+
+  async getBookingListOfRecurrenceGroup (id?: string): Promise<Booking[]>{
+    const params = id ? { id } : undefined;
+    const { data } = await apiClient.get<Booking[]>(`/Bookings/recurring-group/${id}`);
     return data;
   },
 

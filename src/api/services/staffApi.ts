@@ -1,3 +1,4 @@
+import type { BookingFilterRequest } from '../api';
 import { type FrontendBooking, type FrontendReport } from '../apiAdapters';
 import { bookingsApi } from './bookingsApi';
 import { reportsApi } from './reportsApi';
@@ -7,8 +8,11 @@ export const staffApi = {
   async getPendingBookings(): Promise<FrontendBooking[]> {
     return bookingsApi.getAll('Pending');
   },
-  async getBookingHistory(): Promise<FrontendBooking[]> {
-    return bookingsApi.getAll();
+  async getBookingHistory(pageIndex: number): Promise<FrontendBooking[]> {
+    let filters : BookingFilterRequest = {
+      pageIndex,
+    }
+    return bookingsApi.getFiltered(filters);
   },
   async getSecurityTasks(): Promise<SecurityTask[]> {
     return securityTasksApi.getPendingTasks();  

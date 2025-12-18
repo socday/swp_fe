@@ -3,10 +3,13 @@ import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Label } from "../ui/label";
-import { Calendar, Clock, MapPin, XCircle } from "lucide-react";
+import { Calendar, Clock, MapPin, XCircle, Eye } from "lucide-react";
 import { motion } from "motion/react";
 import { RoomImageGallery } from "../shared/RoomImageGallery";
 import { getRoomImages } from "../../api/roomImages";
+import { RecurringGroupDetailsDialog } from "./RecurringGroupDetailsDialog";
+import { useState } from "react";
+import type { RecurringBookingSummary } from "../../api/api/types";
 
 import { useMyBookings } from "./useMyBookings";
 
@@ -22,8 +25,22 @@ export function MyBookings({ userId }: MyBookingsProps) {
     bookingType,
     setBookingType,
     handleCancelBooking, 
-    getStatusBadgeType 
+    getStatusBadgeType,
+    refreshBookings 
   } = useMyBookings(userId);
+
+  const [selectedGroup, setSelectedGroup] = useState<RecurringBookingSummary | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+
+  const handleViewDetails = (group: RecurringBookingSummary) => {
+    setSelectedGroup(group);
+    setDetailsDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setDetailsDialogOpen(false);
+    setSelectedGroup(null);
+  };
 
   const renderStatusBadge = (status: string) => {
     const type = getStatusBadgeType(status);
@@ -199,8 +216,8 @@ export function MyBookings({ userId }: MyBookingsProps) {
                         </div>
 
                         <div className="text-sm col-span-2">
-                          <span className="font-medium">Pattern: </span>
-                          {group.patternName}
+                          <span className="font-medium">Email: </span>
+                          {group.userName}
                         </div>
 
                         <div className="text-sm col-span-2">
@@ -215,6 +232,18 @@ export function MyBookings({ userId }: MyBookingsProps) {
                           {group.purpose}
                         </div>
                       )}
+
+                      {/* View Details Button */}
+                      <div className="pt-3 border-t">
+                        <Button
+                          onClick={() => handleViewDetails(group)}
+                          variant="outline"
+                          className="w-full"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Booking Details
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -227,6 +256,28 @@ export function MyBookings({ userId }: MyBookingsProps) {
               </div>
             )}
           </div>
+        )}
+
+        {/* Recurring Group Details Dialog */}
+        {selectedGroup && (
+          <RecurringGroupDetailsDialog
+            open={detailsDialogOpen}
+            onOpenChange={handleDialogClose}
+            recurrenceGroupId={selectedGroup.recurrenceGroupId}
+            facilityName={selectedGroup.facilityName}
+            slotName={selectedGroup.slotName}
+            startDate={selectedGroup.startDate}
+            endDate={selectedGroup.endDate}
+            totalBookings={selectedGroup.totalBookings}
+            pendingCount={selectedGroup.pendingCount}
+            approvedCount={selectedGroup.approvedCount}
+            rejectedCount={selectedGroup.rejectedCount}
+            isStaffOrAdmin={false}
+            onActionComplete={() => {
+              handleDialogClose();
+              refreshBookings();
+            }}
+          />
         )}
       </CardContent>
     </Card>

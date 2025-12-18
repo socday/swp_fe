@@ -167,5 +167,14 @@ export const bookingsApi = {
     }
   },
 
-
+  async getBookingListOfRecurrenceGroup (id?: string): Promise<Booking[]>{
+    try {
+      const data = await bookingsController.getBookingListOfRecurrenceGroup(id);
+      return data;
+    } catch (error)
+    {
+      console.error('Error fetching booking recurrence groups:', error);
+      return [];
+    }
+  },
 };

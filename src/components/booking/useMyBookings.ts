@@ -213,5 +213,6 @@ export function useMyBookings(userId: string) {
     setBookingType,
     handleCancelBooking,
     getStatusBadgeType,
+    refreshBookings: loadBookings,
   };
 }

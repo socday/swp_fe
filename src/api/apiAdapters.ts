@@ -65,6 +65,9 @@ export interface FrontendReport {
   createdAt: string; // Required based on your JSON
   createdBy: string; // Mapped from your email field
   facilityName: string;
+  // Reporter details (may be present depending on backend)
+  reporterId?: number;
+  reporterRole?: string;
   
   // Optional/Nullable fields based on previous structure
   facilityId?: number;
@@ -133,6 +136,10 @@ export function adaptSlot(backend: Slot): FrontendSlot {
  * Map Booking from backend to frontend format
  */
 export function adaptBooking(backend: GetBookingRepsonse): FrontendBooking {
+  const bookingDateStr = typeof backend.bookingDate === 'string'
+    ? backend.bookingDate.split('T')[0]
+    : new Date(backend.bookingDate).toISOString().split('T')[0];
+
   return {
     id: backend.bookingId,
     userId: backend.userId,
@@ -140,7 +147,7 @@ export function adaptBooking(backend: GetBookingRepsonse): FrontendBooking {
     facilityName: backend.facilityName,
     startTime: backend.startTime,
     endTime: backend.endTime,
-    date: backend.bookingDate,
+    date: bookingDateStr,
     slotId: backend.slotId,
     purpose: backend.purpose,
     status: backend.status,
@@ -161,6 +168,9 @@ export function adaptReport(backend: Report): FrontendReport {
     status: backend.status,
     createdAt: backend.createdAt,
     createdBy: backend.user?.fullName ?? '',
+    // Map reporter id & role if present
+    reporterId: backend.user?.userId,
+    reporterRole: backend.user?.roleName || backend.user?.role?.name,
     facilityName: backend.facility?.facilityName ?? '',
     facilityId: backend.facilityId,
     bookingId: backend.bookingId,

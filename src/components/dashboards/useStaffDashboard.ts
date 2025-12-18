@@ -10,11 +10,14 @@ import {
   Report,
   securityTasksApi,
 } from "../../api/api";
+import type { RecurringBookingSummary } from '../../api/api/types';
 import { BookingForSecurityTask } from "../../api/services/securityTasksApi";
 
 export function useStaffDashboard() {
   const [activeTab, setActiveTab] = useState("approvals");
+  const [bookingType, setBookingType] = useState<"individual" | "recurring">("individual");
   const [pendingBookings, setPendingBookings] = useState<Booking[]>([]);
+  const [recurringGroups, setRecurringGroups] = useState<RecurringBookingSummary[]>([]);
   const [bookingHistory, setBookingHistory] = useState<Booking[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [securityTasks, setSecurityTasks] = useState<SecurityTask[]>([]);
@@ -53,13 +56,24 @@ export function useStaffDashboard() {
     else if (activeTab === "rooms") loadRooms();
     else if (activeTab === "security") loadSecurityTasks();
     else if (activeTab === "reports") loadReports();
-  }, [activeTab]);
+  }, [activeTab, bookingType]);
 
   const loadPendingBookings = async () => {
     setLoading(true);
-    const data = await staffApi.getPendingBookings();
-    setPendingBookings(data);
-    setLoading(false);
+    try {
+      if (bookingType === "individual") {
+        const data = await staffApi.getPendingBookings();
+        setPendingBookings(data);
+      } else {
+        const groups = await bookingsApi.getBookingRecurrenceGroup();
+        setRecurringGroups(groups);
+      }
+    } catch (error) {
+      console.error("Failed to load bookings:", error);
+      toast.error("Failed to load bookings");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const loadBookingHistory = async () => {
@@ -228,7 +242,10 @@ const handleCreateSecurityTask = async (newTaskTitle: string, newTaskDescription
   return {
     activeTab,
     setActiveTab,
+    bookingType,
+    setBookingType,
     pendingBookings,
+    recurringGroups,
     bookingHistory,
     rooms,
     securityTasks,
@@ -281,5 +298,6 @@ const handleCreateSecurityTask = async (newTaskTitle: string, newTaskDescription
     handleCancelBooking,
     handleCreateSecurityTask,
     handleReviewReport,
+    onRecurringGroupActionComplete: loadPendingBookings,
   };
 }
