@@ -2,6 +2,7 @@ import { adaptReports, toBackendReport, type FrontendReport } from '../apiAdapte
 import reportsController from '../api/controllers/reportsController';
 import type { ReportCreateRequest, ReportStatusUpdate } from '../api/types';
 import { safeErrorMessage } from './common';
+import { ApiBooking } from '../api/types';
 
 export const reportsApi = {
   async getAll(status?: string): Promise<FrontendReport[]> {

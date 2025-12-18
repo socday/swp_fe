@@ -31,22 +31,34 @@ export interface Booking {
   facilityName?: string;
 }
 
-export interface GetBookingRepsonse {
-  bookedBy:string;
-  bookingDate: Date;
+export interface ApiBooking {
   bookingId: number;
-  rejectionReason?: string;
-  purpose: string;
-  slotId: number;
-  facilityId: number;
-  campusName: string;
-  endTime: Date;
-  facilityName: string;
-  startTime: Date;
-  status: string;
   userId: number;
-  userName:string;
+  facilityName: string;
+  campusName: string;
+  bookingDate: string;   
+  startTime: string;    
+  endTime: string;       
+  status: string;
+  bookedBy: string;
+  purpose?: string;
+  rejectionReason?: string;
 }
+
+export interface GetBookingResponse {
+  bookingId: number;
+  userId: number;
+  bookedBy: string;
+  facilityName: string;
+  campusName: string;
+  bookingDate: string;   // ISO string
+  startTime: string;     // "09:30:00"
+  endTime: string;       // "11:45:00"
+  status: string;
+  purpose?: string;
+  rejectionReason?: string;
+}
+
 
 export interface BookingCreateRequest {
   facilityId: number;

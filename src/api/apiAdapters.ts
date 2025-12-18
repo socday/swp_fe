@@ -6,7 +6,7 @@
  * 
  * This file ensures all API responses are transformed to match frontend expectations
  */
-import type { Campus, Facility, Slot, Booking, Report, Notification, GetBookingRepsonse, GetFacilityResponse } from './api/types';
+import type { Campus, Facility, Slot, Booking, Report, Notification, GetBookingRepsonse, GetFacilityResponse, GetBookingResponse } from './api/types';
 
 // ============================================================================
 // FRONTEND INTERFACES (What components expect)
@@ -40,19 +40,17 @@ export interface FrontendSlot {
 export interface FrontendBooking {
   id: number;
   userId: number;
-  facilityId: number;
+  facilityId: number;     
   date: string;
-  slotId: number;
-  purpose?: string;
-  bookingType?: string;
+  slotId?: number;
   status: string;
-  rejectionReason?: string; 
-  // Populated fields
+  purpose?: string;
+  rejectionReason?: string;
   userName?: string;
   facilityName?: string;
-  slotName?: string;
-  startTime?: Date;
-  endTime?: Date;
+
+  startTime: string;     
+  endTime: string;  
 }
 
 export interface FrontendReport {
@@ -134,24 +132,21 @@ export function adaptSlot(backend: Slot): FrontendSlot {
 /**
  * Map Booking from backend to frontend format
  */
-export function adaptBooking(backend: GetBookingRepsonse): FrontendBooking {
-  const bookingDateStr = typeof backend.bookingDate === 'string'
-    ? backend.bookingDate.split('T')[0]
-    : new Date(backend.bookingDate).toISOString().split('T')[0];
-
+export function adaptBooking(
+  backend: GetBookingResponse
+): FrontendBooking {
   return {
     id: backend.bookingId,
     userId: backend.userId,
     facilityId: backend.facilityId,
     facilityName: backend.facilityName,
+    date: backend.bookingDate.split("T")[0],
     startTime: backend.startTime,
     endTime: backend.endTime,
-    date: bookingDateStr,
-    slotId: backend.slotId,
-    purpose: backend.purpose,
     status: backend.status,
+    purpose: backend.purpose,
     rejectionReason: backend.rejectionReason,
-    userName: backend.bookedBy || backend.userName,
+    userName: backend.bookedBy,
   };
 }
 

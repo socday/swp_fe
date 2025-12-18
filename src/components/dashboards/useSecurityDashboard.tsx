@@ -37,10 +37,16 @@ export function useSecurityDashboard(user: User) {
     useState<Report["severity"]>("Medium");
   const [reportDescription, setReportDescription] = useState("");
   const [reports, setReports] = useState<FrontendReport[]>([]);
+ 
+const roomIdToNameMap = rooms.reduce((acc, room) => {
+  acc[room.id] = room.name;
+  return acc;
+}, {} as Record<number, string>);
   
 const roomBookings = approvedBookings.filter(
-  b => b.facilityId === Number(selectedRoomId)
+  b => b.facilityName === roomIdToNameMap[Number(selectedRoomId)]
 );
+
 const roomTimeSlots = roomBookings.map(b => ({
   value: `${b.date}|${b.startTime}|${b.endTime}`,
   label: `${b.date} · ${b.startTime} - ${b.endTime}`,
@@ -104,33 +110,58 @@ useEffect(() => {
   };
 
 const handleSubmitReport = async () => {
-  if (!selectedRoomId || !reportDescription.trim()) {
+  // 1. Validate bắt buộc
+  if (!selectedRoomId || !selectedTimeStart || !reportDescription.trim()) {
     toast.error("Please fill all required fields");
     return;
   }
 
-const payload: ReportCreateRequest = {
-  facilityId: Number(selectedRoomId),
-  title: reportType,
-  description: `${reportDescription}\nTime: ${selectedTimeStart}`,
-  reportType,
-};
+  // 2. Tìm booking tương ứng
+  const selectedBooking = approvedBookings.find(
+    (b) =>
+      b.facilityName === roomIdToNameMap[Number(selectedRoomId)] &&
+      `${b.date}|${b.startTime}|${b.endTime}` === selectedTimeStart
+  );
 
+  if (!selectedBooking) {
+    toast.error("No approved booking found for selected time");
+    return;
+  }
+
+  // 3. Tạo payload gửi BE
+  const payload: ReportCreateRequest = {
+    facilityId: Number(selectedRoomId),
+    bookingId: selectedBooking.id, 
+    title: reportType,
+    reportType,
+    description: `
+${reportDescription}
+
+Date: ${selectedBooking.date}
+Time: ${selectedBooking.startTime} - ${selectedBooking.endTime}
+Booking ID: ${selectedBooking.id}
+`.trim(),
+  };
+
+  // 4. Gửi report
   const success = await securityApi.submitReport(payload);
 
+  // 5. Handle result
   if (success) {
-    toast.success("Report submitted");
+    toast.success("Report submitted successfully");
     resetReportForm();
   } else {
-    toast.error("Failed to submit");
+    toast.error("Failed to submit report");
   }
 };
+
 
 
 
   const resetReportForm = () => {
     setSubmitReportDialogOpen(false);
     setSelectedRoomId("");
+    setSelectedTimeStart("");
     setReportType("maintenance");
     setReportSeverity("Medium");
     setReportDescription("");

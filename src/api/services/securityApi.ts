@@ -1,4 +1,4 @@
-import { type FrontendBooking } from '../apiAdapters';
+import { adaptBooking, type FrontendBooking } from '../apiAdapters';
 import type { SecurityTask } from '../api/types';
 import { bookingsApi } from './bookingsApi';
 import { reportsApi } from './reportsApi';
@@ -10,9 +10,12 @@ export const securityApi = {
     return securityTaskController.getPendingTasks();
   },
 
-  async getApprovedBookings(): Promise<FrontendBooking[]> {
-    return bookingsApi.getAll('Approved');
-  },
+async getApprovedBookings(): Promise<FrontendBooking[]> {
+  const bookings = await bookingsApi.getAll();
+
+  return bookings.filter(b => b.status === "Approved");
+},
+
 
   async completeTask(
     taskId: number,
