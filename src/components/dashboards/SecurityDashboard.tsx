@@ -327,13 +327,48 @@ function InspectionTabUI({ s }) {
                 </SelectTrigger>
                 <SelectContent>
                   {s.rooms.map(room => (
-                    <SelectItem key={room.id} value={room.id}>
+                    <SelectItem key={room.id} value={String(room.id)}>
                       {room.name} - {room.building}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+
+<Label>Select Time</Label>
+<Select
+  value={s.selectedTimeStart}
+  onValueChange={s.setSelectedTimeStart}
+>
+  <SelectTrigger>
+    <SelectValue
+      placeholder={
+        !s.selectedRoomId
+          ? "Select room first"
+          : s.roomTimeSlots.length === 0
+          ? "No approved schedule for this room"
+          : "Choose time slot"
+      }
+    />
+  </SelectTrigger>
+
+  <SelectContent>
+    {s.roomTimeSlots.length === 0 ? (
+      <SelectItem value="none" disabled>
+        No approved schedule
+      </SelectItem>
+    ) : (
+      s.roomTimeSlots.map(t => (
+        <SelectItem key={t.value} value={t.value}>
+          {t.label}
+        </SelectItem>
+      ))
+    )}
+  </SelectContent>
+</Select>
+
+          </div>
 
             <div className="space-y-2">
               <Label>Report Type</Label>

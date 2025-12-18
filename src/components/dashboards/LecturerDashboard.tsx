@@ -45,7 +45,7 @@ export function LecturerDashboard({ user, onLogout }: LecturerDashboardProps) {
               value="bookings"
               className="data-[state=active]:border-2 data-[state=active]:border-orange-500"
             >
-              My Bookings
+              `My Bookings`
             </TabsTrigger>
 
             <TabsTrigger

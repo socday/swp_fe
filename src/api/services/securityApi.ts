@@ -3,7 +3,7 @@ import type { SecurityTask } from '../api/types';
 import { bookingsApi } from './bookingsApi';
 import { reportsApi } from './reportsApi';
 import securityTaskController from '../api/controllers/securityTaskController';
-import type { SecurityUIReport } from '../api/types/reportTypes';
+import type { ReportCreateRequest } from '../api/types/reportTypes';
 
 export const securityApi = {
   async getTasks(): Promise<SecurityTask[]> {
@@ -21,21 +21,16 @@ export const securityApi = {
     try {
       await securityTaskController.completeTask(taskId, {
         reportNote,
-      });
+      }
+    );
       return true;
     } catch (error) {
       console.error('Complete task failed:', error);
       return false;
     }
   },
-  async submitReport(report: SecurityUIReport): Promise<boolean> {
-    const result = await reportsApi.create({
-      facilityId: Number(report.roomId),
-      title: report.type,              
-      description: report.description,
-      reportType: report.type,         
-      bookingId: undefined,
-    });
-    return result.success;
-  },
+async submitReport(report: ReportCreateRequest): Promise<boolean> {
+  const result = await reportsApi.create(report);
+  return result.success;
+}
 };

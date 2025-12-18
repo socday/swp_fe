@@ -51,7 +51,7 @@ const s = useStudentDashboard();
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header user={user} onLogout={onLogout} />
 
-      <main className="container mx-auto px-4 py-8 flex-grow">
+      <main className="container mx-auto px-4 py-10 flex-grow">
         <div className="mb-6">
           <h1 className="text-3xl mb-2">Welcome, {user.name}</h1>
           <p className="text-gray-600">
@@ -60,7 +60,7 @@ const s = useStudentDashboard();
         </div>
 
         <Tabs value={s.activeTab} onValueChange={s.setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 max-w-md">
+          <TabsList className="grid w-full grid-cols-4 max-w-md">
             <TabsTrigger
               value="search"
               className="data-[state=active]:border-2 data-[state=active]:border-orange-500"
@@ -104,9 +104,9 @@ const s = useStudentDashboard();
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Hỏng thiết bị">Equipment Issue</SelectItem>
-                      <SelectItem value="Vấn đề đặt phòng">Booking Issue</SelectItem>
-                      <SelectItem value="Khác">Other</SelectItem>
+                      <SelectItem value="Equipment Issue">Equipment Issue</SelectItem>
+                      <SelectItem value="Booking Issue">Booking Issue</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
                   </Select>
 

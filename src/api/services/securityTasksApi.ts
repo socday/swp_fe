@@ -101,7 +101,7 @@ export const securityTasksApi = {
     reportNote?: string
   ): Promise<{ success: boolean; message?: string; error?: string }> {
     try {
-      const response = await securityTaskController.completeTask(taskId, {
+      const response = await securityTaskController.completeTask(taskId, {  
         reportNote,
       });
 

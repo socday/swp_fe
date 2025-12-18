@@ -11,7 +11,7 @@ export function useStudentDashboard() {
   const [reports, setReports] = useState<FrontendReport[]>([]);
   const [loadingReports, setLoadingReports] = useState(false);
 
-  const [reportType, setReportType] = useState("Hỏng thiết bị");
+  const [reportType, setReportType] = useState("");
   const [reportDescription, setReportDescription] = useState("");
 
   /* ===== LOAD REPORTS ===== */
