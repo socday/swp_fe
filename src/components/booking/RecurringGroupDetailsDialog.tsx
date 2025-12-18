@@ -162,25 +162,25 @@ export function RecurringGroupDetailsDialog({
 
                 {/* Action Buttons for Staff/Admin */}
                 {isStaffOrAdmin && pendingCount > 0 && (
-                  <div className="flex gap-2 pt-4 border-t">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4 border-t">
                     <Button
-                      onClick={handleApproveAll}
-                      disabled={actionInProgress}
-                      className="flex-1 bg-green-600 hover:bg-green-700"
+                    onClick={handleApproveAll}
+                    disabled={actionInProgress}
+                    className="w-full !bg-green-600 hover:!bg-green-700"
                     >
-                      <Check className="mr-2 h-4 w-4" />
-                      Approve All Pending
+                    <Check className="mr-2 h-4 w-4" />
+                    Approve All Pending
                     </Button>
                     <Button
-                      onClick={handleRejectAll}
-                      disabled={actionInProgress}
-                      variant="destructive"
-                      className="flex-1"
+                    onClick={handleRejectAll}
+                    disabled={actionInProgress}
+                    variant="destructive"
+                    className="w-full"
                     >
-                      <X className="mr-2 h-4 w-4" />
-                      Reject All Pending
+                    <X className="mr-2 h-4 w-4" />
+                    Reject All Pending
                     </Button>
-                  </div>
+                </div>
                 )}
               </div>
             </CardContent>

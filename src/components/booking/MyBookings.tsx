@@ -197,9 +197,18 @@ export function MyBookings({ userId }: MyBookingsProps) {
                 <Card>
                   <CardContent className="pt-6">
                     <div className="space-y-3">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-wrap">
                         <h3 className="text-lg font-semibold">{group.facilityName}</h3>
                         <Badge className="bg-blue-500">Recurring</Badge>
+                        {group.pendingCount > 0 && (
+                          <Badge className="bg-yellow-500">Pending ({group.pendingCount})</Badge>
+                        )}
+                        {group.approvedCount === group.totalBookings && (
+                          <Badge className="bg-green-500">All Approved</Badge>
+                        )}
+                        {group.rejectedCount === group.totalBookings && (
+                          <Badge className="bg-red-500">All Rejected</Badge>
+                        )}
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
