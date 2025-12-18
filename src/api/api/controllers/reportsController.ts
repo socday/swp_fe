@@ -1,7 +1,7 @@
 import { apiClient } from '../../httpClient';
 import type {
   ApiMessageResponse,
-  Report,
+  
   ReportCreateRequest,
   ReportStatusUpdate,
 } from '../types';
