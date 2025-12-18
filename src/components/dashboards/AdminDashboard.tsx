@@ -8,6 +8,7 @@ import { UsageReports } from '../admin/UsageReports';
 import { AdminScheduleView } from '../admin/AdminScheduleView';
 import { UserManagement } from '../admin/UserManagement';
 import { AdvancedStatistics } from '../admin/AdvancedStatistics';
+import { AdminReports } from '../admin/AdminReports';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Users, BarChart3, ClipboardList, Calendar, Building2, FileText } from 'lucide-react';
 
@@ -79,6 +80,9 @@ export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
 
           <TabsContent value="reports" className="mt-6">
             <UsageReports />
+            <div className="mt-6">
+              <AdminReports />
+            </div>
           </TabsContent>
         </Tabs>
       </main>

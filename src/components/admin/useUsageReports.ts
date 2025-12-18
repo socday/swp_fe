@@ -30,10 +30,12 @@ export function useUsageReports() {
     toast.success('Report exported successfully');
   };
 
-  const bookingsByRoom = Object.entries(analytics?.bookingsByRoom || {}).map(([name, value]) => ({
-    name,
-    bookings: value,
-  })).slice(0, 10);
+  const bookingsByRoom = (analytics?.topFacilities && Array.isArray(analytics.topFacilities) && analytics.topFacilities.length > 0)
+    ? analytics.topFacilities.map((f: any) => ({ name: f.facilityName, bookings: f.bookingCount })).slice(0, 10)
+    : Object.entries(analytics?.bookingsByRoom || {}).map(([name, value]) => ({
+        name,
+        bookings: value,
+      })).slice(0, 10);
 
   const bookingsByCategory = Object.entries(analytics?.bookingsByCategory || {}).map(([name, value], index) => ({
     name,

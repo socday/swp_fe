@@ -5,6 +5,8 @@ import { fetchTimeSlots, getCachedTimeSlots, type TimeSlot } from '../../api/tim
 export interface Booking {
   id: string;
   roomId: string;
+  // Backwards-compatible: the source-of-truth for the API room label is `facilityName`
+  facilityName?: string;
   roomName: string;
   userId: string;
   userName: string;
@@ -71,6 +73,19 @@ export function useAdminScheduleView() {
       const bookingsData = await bookingsApi.getAll();
       const roomsData = await roomsApi.getAll();
 
+      // Fetch users once to resolve roles (for coloring)
+      let usersMap: Record<number, string> = {};
+      try {
+        const usersResp = await (await import('../../api/api/controllers/usersController')).default.getUsers({ pageSize: 1000 } as any);
+        const userItems = (usersResp && (usersResp as any).items) || [];
+        usersMap = userItems.reduce((acc: Record<number, string>, u: any) => {
+          if (u.userId) acc[u.userId] = (u.roleName || '').toLowerCase();
+          return acc;
+        }, {});
+      } catch (e) {
+        console.warn('Unable to fetch users for role mapping:', e);
+      }
+
       // Helper function để expand semester booking thành individual bookings cho hiển thị
       const expandSemesterBooking = (booking: any) => {
         if (!booking.isSemester || !booking.semesterEndDate || !booking.recurringDays) {
@@ -102,23 +117,31 @@ export function useAdminScheduleView() {
 
       // Expand all bookings
       const expandedBookings = bookingsData.flatMap((booking: any) => {
-        const room = roomsData.find((r: any) => r.id === booking.roomId);
+        // Use facilityId (backend) or roomId fallback to find corresponding room
+        const facilityIdValue = booking.facilityId ?? booking.roomId ?? '';
+        const room = roomsData.find((r: any) => r.id === String(facilityIdValue));
+
         const bookingWithRoom = {
           ...booking,
+          roomId: String(facilityIdValue),
           roomName: room?.name || 'Unknown Room',
           campus: room?.campus || 'FU_FPT',
           slotId: booking.slotId,
           slotName: booking.slotName,
           startTime: booking.startTime,
           endTime: booking.endTime,
+          // Map userRole using usersMap (default to student)
+          userRole: usersMap[booking.userId] && usersMap[booking.userId].includes('lecturer') ? 'lecturer' : 'student',
         };
         return expandSemesterBooking(bookingWithRoom);
       });
 
       console.log('All bookings (expanded):', expandedBookings);
-      console.log('Approved bookings:', expandedBookings.filter((b: Booking) => b.status === 'approved'));
+      const approvedBookings = expandedBookings.filter((b: Booking) => String(b.status).toLowerCase() === 'approved');
+      console.log('Approved bookings:', approvedBookings);
 
-      setBookings(expandedBookings);
+      // Only keep approved bookings for the schedule display
+      setBookings(approvedBookings);
     } catch (error) {
       console.error('Error fetching schedule data:', error);
     } finally {
@@ -205,7 +228,8 @@ export function useAdminScheduleView() {
       return matchesDate && matchesSlot && matchesCampus;
     });
 
-    return filtered;
+    // Ensure only approved bookings are considered (defensive check)
+    return filtered.filter(b => String(b.status).toLowerCase() === 'approved');
   };
 
   const handleBookingClick = (bookings: Booking[], slotLabel: string, date: string) => {

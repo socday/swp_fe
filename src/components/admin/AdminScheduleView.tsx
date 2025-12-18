@@ -12,7 +12,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from '../ui/dialog';
-import { useAdminScheduleView, Booking } from './useAdminScheduleView';
+import { useAdminScheduleView } from './useAdminScheduleView';
+import type { Booking } from './useAdminScheduleView';
 
 const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -131,6 +132,12 @@ export function AdminScheduleView() {
                     const bookingsForSlot = getBookingsForDateAndSlot(date, slot.id);
                     const isToday = formatDateKey(new Date()) === formatDateKey(date);
 
+                    // If there are bookings for this slot, show a full-width pill with the room name.
+                    // Priority: if any lecturer booking exists, display that (lecturer color), otherwise display a student booking.
+                    const lecturerBooking = bookingsForSlot.find(b => b.userRole === 'lecturer');
+                    const displayBooking = lecturerBooking || bookingsForSlot[0];
+                    const isLecturer = displayBooking?.userRole === 'lecturer';
+
                     return (
                       <div
                         key={dayIndex}
@@ -143,15 +150,13 @@ export function AdminScheduleView() {
                           }
                         }}
                       >
-                        {bookingsForSlot.length > 0 && (
-                          <div className="flex flex-col items-center justify-center h-full">
-                            <Users className="h-5 w-5 text-gray-600 mb-1" />
-                            <span className="text-sm font-semibold text-gray-700">
-                              {bookingsForSlot.length}
-                            </span>
-                            <span className="text-[10px] text-gray-500">
-                              {bookingsForSlot.length === 1 ? 'booking' : 'bookings'}
-                            </span>
+                        {bookingsForSlot.length > 0 && displayBooking && (
+                          <div className="h-full flex items-center">
+                            <div className={`w-full text-center py-2 rounded-md border ${
+                              isLecturer ? 'bg-orange-100 border-orange-300 text-orange-800' : 'bg-blue-100 border-blue-300 text-blue-800'
+                            }`}>
+                              <span className="font-semibold">{displayBooking.facilityName || displayBooking.roomName}</span>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -244,7 +249,7 @@ export function AdminScheduleView() {
                               ? 'bg-orange-400' 
                               : 'bg-blue-400'
                           }`}></div>
-                          <span>{booking.roomName}</span>
+                          <span>{booking.facilityName || booking.roomName}</span>
                         </div>
                       </td>
                       <td className="p-3">{booking.userName}</td>
