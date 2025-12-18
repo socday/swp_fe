@@ -59,8 +59,8 @@ const s = useStudentDashboard();
           </p>
         </div>
 
-        <Tabs value={s.activeTab} onValueChange={s.setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 max-w-md">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3 max-w-md">
             <TabsTrigger
               value="search"
               className="data-[state=active]:border-2 data-[state=active]:border-orange-500"
@@ -168,11 +168,7 @@ const s = useStudentDashboard();
           </TabsContent>
 
           <TabsContent value="schedule" className="mt-6">
-  <ScheduleView userId={String(user.id)} />
-</TabsContent>
-
-          <TabsContent value="schedule" className="mt-6">
-            <ScheduleView userId={user.id} />
+            <ScheduleView userId={String(user.id)} />
           </TabsContent>
         </Tabs>
       </main>

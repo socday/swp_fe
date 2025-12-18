@@ -198,40 +198,37 @@ export function useScheduleView(userId?: string) {
 
       const roomMap = new Map(rooms.map((room) => [room.id.toString(), room]));
 
-      // --- PHẦN SỬA LOGIC MAP DỮ LIỆU ---
-      const mapped: ScheduleBooking[] = bookingData.map((booking: any) => {
-        // 1. Xử lý Facility/Room ID
-        console.log("ITEM RAW:", JSON.stringify(booking, null, 2));
-        const fId = booking.facilityId || booking.FacilityID;
-        const room = roomMap.get(String(fId));
+      // --- PHẦN SỬA LOGIC MAP DỮ LIỆU (ĐÃ CẬP NHẬT) ---
+const mapped: ScheduleBooking[] = bookingData.map((booking: any) => {
+  // 1. Xác định ID phòng để tra cứu (phòng khi API không trả về name)
+  const fId = booking.facilityId || booking.FacilityID;
+  const room = roomMap.get(String(fId));
 
-        // 2. Xử lý Slot ID (QUAN TRỌNG)
-        // Dựa vào hình Swagger của bạn, API trả về "slotID" (s thường, ID hoa)
-        // Code này sẽ thử tất cả các trường hợp để đảm bảo không bị NaN
-        const rawSlotId = booking.slotID || booking.slotId || booking.SlotID;
+  // 2. Lấy tên phòng: Ưu tiên tên từ API -> sau đó đến tên từ Map -> cuối cùng là mặc định
+  // Lưu ý: Swagger của bạn trả về "facilityName" (viết thường chữ f)
+  const displayName = booking.facilityName || booking.FacilityName || room?.name || "Unknown Room";
 
-        // 3. Xử lý Ngày tháng
-        const rawDate = booking.bookingDate || booking.BookingDate || booking.date;
-        let dateStr = "";
-        if (rawDate) {
-           if (typeof rawDate === 'string') {
-             dateStr = rawDate.split('T')[0];
-           } else {
-             dateStr = new Date(rawDate).toISOString().split('T')[0];
-           }
-        }
+  // 3. Xử lý Slot ID (Dựa trên Swagger là "slotName" như "Slot 3")
+  // Nếu UI của bạn dựa trên ID số (1, 2, 3...) thì dùng rawSlotId
+  const rawSlotId = booking.slotID || booking.slotId || (booking.slotName ? parseInt(booking.slotName.replace(/\D/g, "")) : undefined);
 
-        return {
-          id: booking.id || booking.BookingID,
-          date: dateStr,
-          slotId: Number(rawSlotId), // Ép kiểu số
-          facilityName: room?.name ?? "Facility",
-          campus: room?.campus,
-          purpose: booking.purpose || booking.Purpose,
-          userId: String(booking.userId || booking.UserID),
-        };
-      });
-      // ------------------------------------
+  // 4. Xử lý Ngày tháng
+  const rawDate = booking.bookingDate || booking.BookingDate || booking.date;
+  let dateStr = "";
+  if (rawDate) {
+    dateStr = typeof rawDate === 'string' ? rawDate.split('T')[0] : new Date(rawDate).toISOString().split('T')[0];
+  }
+
+  return {
+    id: booking.id || booking.BookingID,
+    date: dateStr,
+    slotId: Number(rawSlotId), 
+    facilityName: displayName, 
+    campus: room?.campus || booking.campusName,
+    purpose: booking.purpose || booking.Purpose,
+    userId: String(booking.userId || booking.UserID),
+  };
+});
 
       console.log("Mapped Bookings (Fixed):", mapped); // Kiểm tra log này
       setBookings(mapped);

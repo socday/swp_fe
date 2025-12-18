@@ -24,9 +24,9 @@ export function UsageReports() {
   if (loading || !analytics) {
     return (
       <Card>
-        <CardContent className="py-12 text-center text-gray-500">
+        {/* <CardContent className="py-12 text-center text-gray-500">
           <p>Loading analytics...</p>
-        </CardContent>
+        </CardContent> */}
       </Card>
     );
   }
