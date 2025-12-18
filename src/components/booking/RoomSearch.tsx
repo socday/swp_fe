@@ -36,7 +36,7 @@ import { useRoomSearch } from "./useRoomSearch";
 import type { Room } from "../../api/api";
 
 interface RoomSearchProps {
-  userRole: "student" | "lecturer" | "admin";
+  userRole: "student" | "lecturer" | "admin" | "staff";
 }
 
 export function RoomSearch({ userRole }: RoomSearchProps) {
@@ -64,8 +64,7 @@ export function RoomSearch({ userRole }: RoomSearchProps) {
     selectedCategoryId,
     setSelectedCategoryId,
 
-    minCapacity,
-    setMinCapacity,
+
 
     selectedDate,
     setSelectedDate,
@@ -77,7 +76,12 @@ export function RoomSearch({ userRole }: RoomSearchProps) {
     setSelectedRoom,
   } = useRoomSearch();
 
-  const todayIso = new Date().toISOString().split("T")[0];
+  const todayIso = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(new Date());
   const selectedSlot = availableSlots.find((slot) => slot.id.toString() === selectedSlotId);
   const formatTime = (time?: string) => (time ? time.slice(0, 5) : "--:--");
   const slotSummary = (() => {

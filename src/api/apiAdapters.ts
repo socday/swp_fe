@@ -145,7 +145,7 @@ export function adaptBooking(backend: GetBookingRepsonse): FrontendBooking {
     purpose: backend.purpose,
     status: backend.status,
     rejectionReason: backend.rejectionReason,
-    userName: backend.bookedBy,
+    userName: backend.bookedBy || backend.userName,
   };
 }
 

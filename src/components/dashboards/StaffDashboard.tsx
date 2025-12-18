@@ -4,6 +4,7 @@ import { Footer } from "../shared/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
 import { AdminScheduleView } from "../admin/AdminScheduleView";
+import { RoomSearch } from "../booking/RoomSearch";
 import { StaffApprovalsUI } from "./ui/StaffApprovalsUI";
 import { StaffHistoryUI } from "./ui/StaffHistoryUI";
 import { StaffSecurityTasksUI } from "./ui/StaffSecurityTasksUI";
@@ -36,6 +37,7 @@ export function StaffDashboard({ user, onLogout }: StaffDashboardProps) {
             <div className="flex gap-8">
               <TabsList className="flex flex-col h-fit space-y-2 bg-white p-4 rounded-lg shadow-sm border min-w-[200px]">
                 <TabsTrigger value="approvals" className="w-full justify-start px-4 py-3">Approvals</TabsTrigger>
+                <TabsTrigger value="create-booking" className="w-full justify-start px-4 py-3">Create Booking</TabsTrigger>
                 <TabsTrigger value="schedule" className="w-full justify-start px-4 py-3">Schedule</TabsTrigger>
                 <TabsTrigger value="history" className="w-full justify-start px-4 py-3">History</TabsTrigger>
                 <TabsTrigger value="security" className="w-full justify-start px-4 py-3">Security</TabsTrigger>
@@ -43,6 +45,10 @@ export function StaffDashboard({ user, onLogout }: StaffDashboardProps) {
               </TabsList>
 
               <div className="flex-1">
+                <TabsContent value="create-booking" className="mt-0">
+                  <RoomSearch userRole="staff" />
+                </TabsContent>
+
                 <TabsContent value="approvals" className="mt-0">
                   <StaffApprovalsUI {...state} />
                 </TabsContent>

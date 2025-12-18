@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { bookingsApi, roomsApi } from "../../api/api";
 import { getSlotById, getSlotByTime, TimeSlot } from "../../api/timeSlots";
+import type { RecurringBookingSummary } from "../../api/api/types";
 
 export interface UserBookingSummary {
   id: number;
@@ -10,7 +11,7 @@ export interface UserBookingSummary {
   facilityName: string;
   campusLabel?: string;
   buildingLabel?: string;
-  date: string;
+  date?: string;
   slotLabel: string;
   slotDisplayTime: string;
   status: string;
@@ -85,12 +86,15 @@ const extractItems = (payload: RawBooking[] | PaginatedBookingResponse): RawBook
 };
 
 export function useMyBookings(userId: string) {
+  const [bookingType, setBookingType] = useState<"individual" | "recurring">("individual");
   const [bookings, setBookings] = useState<UserBookingSummary[]>([]);
+  const [recurringGroups, setRecurringGroups] = useState<RecurringBookingSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadBookings = useCallback(async () => {
     if (!userId) {
       setBookings([]);
+      setRecurringGroups([]);
       setLoading(false);
       return;
     }
@@ -99,64 +103,73 @@ export function useMyBookings(userId: string) {
 
     try {
       const numericUserId = Number(userId);
-      const [rawBookings, rooms] = await Promise.all([
-        bookingsApi.getFiltered({
-          userId: Number.isNaN(numericUserId) ? undefined : numericUserId,
-        }) as Promise<RawBooking[] | PaginatedBookingResponse>,
-        roomsApi.getAll(),
-      ]);
-      console.log('Raw bookings fetched:', rawBookings);
-      const items = extractItems(rawBookings);
-      const roomMapById = new Map(rooms.map((room) => [room.id.toString(), room]));
-      const roomMapByName = new Map(
-        rooms.map((room) => [room.name.toLowerCase(), room])
-      );
-
-      const mapped = items.map((booking) => {
-        const facilityKey = normaliseRoomKey(booking.facilityId);
-        const room =
-          roomMapById.get(facilityKey) ||
-          (booking.facilityName
-            ? roomMapByName.get(booking.facilityName.toLowerCase())
-            : undefined);
-        const slotInfo = mapSlot(
-          booking.slotId,
-          booking.slotName,
-          booking.startTime,
-          booking.endTime
+      
+      if (bookingType === "individual") {
+        const [rawBookings, rooms] = await Promise.all([
+          bookingsApi.getBookingIndividual(Number.isNaN(numericUserId) ? undefined : numericUserId) as Promise<RawBooking[] | PaginatedBookingResponse>,
+          roomsApi.getAll(),
+        ]);
+        console.log('Raw individual bookings fetched:', rawBookings);
+        const items = extractItems(rawBookings);
+        const roomMapById = new Map(rooms.map((room) => [room.id.toString(), room]));
+        const roomMapByName = new Map(
+          rooms.map((room) => [room.name.toLowerCase(), room])
         );
 
-        const normalizedDate =
-          normaliseIsoDate(booking.bookingDate || booking.date) ||
-          new Date().toISOString().split("T")[0];
+        const mapped = items.map((booking) => {
+          const facilityKey = normaliseRoomKey(booking.facilityId);
+          const room =
+            roomMapById.get(facilityKey) ||
+            (booking.facilityName
+              ? roomMapByName.get(booking.facilityName.toLowerCase())
+              : undefined);
+          const slotInfo = mapSlot(
+            booking.slotId,
+            booking.slotName,
+            booking.startTime,
+            booking.endTime
+          );
 
-        return {
-          id: booking.bookingId ?? booking.id ?? 0,
-          facilityId: booking.facilityId,
-          roomImageKey:
-            room?.id || facilityKey || booking.facilityName || "room",
-          facilityName: booking.facilityName || room?.name || "Facility",
-          campusLabel: booking.campusName || room?.campus,
-          buildingLabel: room?.building,
-          date: normalizedDate,
-          slotLabel: slotInfo.slotLabel,
-          slotDisplayTime: slotInfo.slotDisplayTime,
-          status: booking.status || "Pending",
-          purpose: booking.purpose,
-        } satisfies UserBookingSummary;
-      });
+          const normalizedDate =
+            normaliseIsoDate(booking.bookingDate || booking.date) ||
+            new Date().toISOString().split("T")[0];
 
-      mapped.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          return {
+            id: booking.bookingId ?? booking.id ?? 0,
+            facilityId: booking.facilityId,
+            roomImageKey:
+              room?.id || facilityKey || booking.facilityName || "room",
+            facilityName: booking.facilityName || room?.name || "Facility",
+            campusLabel: booking.campusName || room?.campus,
+            buildingLabel: room?.building,
+            date: normalizedDate,
+            slotLabel: slotInfo.slotLabel,
+            slotDisplayTime: slotInfo.slotDisplayTime,
+            status: booking.status || "Pending",
+            purpose: booking.purpose,
+          } satisfies UserBookingSummary;
+        });
 
-      setBookings(mapped);
+        mapped.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        setBookings(mapped);
+        setRecurringGroups([]);
+      } else {
+        // Fetch recurring booking groups
+        const groups = await bookingsApi.getBookingRecurrenceGroup(Number.isNaN(numericUserId) ? undefined : numericUserId);
+        console.log('Fetched recurring groups:', groups);
+        setRecurringGroups(groups);
+        setBookings([]);
+      }
     } catch (error) {
       console.error("Failed to load bookings", error);
       toast.error("Unable to load bookings. Please try again later.");
       setBookings([]);
+      setRecurringGroups([]);
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, bookingType]);
 
   useEffect(() => {
     loadBookings();
@@ -194,7 +207,10 @@ export function useMyBookings(userId: string) {
 
   return {
     bookings,
+    recurringGroups,
     loading,
+    bookingType,
+    setBookingType,
     handleCancelBooking,
     getStatusBadgeType,
   };

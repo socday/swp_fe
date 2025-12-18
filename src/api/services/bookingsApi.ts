@@ -10,6 +10,7 @@ import type {
   BookingFilterRequest,
   BookingRecurringRequest,
   BookingStatusUpdate,
+  RecurringBookingSummary,
   StaffCancelRequest,
 } from '../api/types';
 import { safeErrorMessage } from './common';
@@ -143,4 +144,28 @@ export const bookingsApi = {
       return false;
     }
   },
+
+  async getBookingIndividual (id?: number, status?: string): Promise<FrontendBooking[]>{
+    try {
+      const data = await bookingsController.getBookingIndividual(id, status);
+      console.log('Fetched individual bookings data API:', data);
+      return adaptBookings(data || []);
+    } catch (error) {
+      console.error('Error fetching individual bookings:', error);
+      return [];
+    }
+  },
+
+  async getBookingRecurrenceGroup (id?: number): Promise<RecurringBookingSummary[]>{
+    try {
+      const data = await bookingsController.getBookingRecurrenceGroup(id);
+      return data;
+    } catch (error)
+    {
+      console.error('Error fetching booking recurrence groups:', error);
+      return [];
+    }
+  },
+
+
 };

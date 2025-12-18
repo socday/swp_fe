@@ -5,8 +5,10 @@ import type {
   BookingAvailabilityResponse,
   BookingCreateRequest,
   BookingFilterRequest,
+  BookingIndividualSummary,
   BookingRecurringRequest,
   BookingStatusUpdate,
+  RecurringBookingSummary,
   StaffCancelRequest,
 } from '../types';
 
@@ -58,6 +60,19 @@ export const bookingsController = {
   async getBookings(filters?: BookingFilterRequest): Promise<Booking[]> {
     const params = filters && Object.keys(filters).length ? filters : undefined;
     const { data } = await apiClient.get<Booking[]>('/Bookings', { params });
+    return data;
+  },
+
+  async getBookingRecurrenceGroup (id?: number): Promise<RecurringBookingSummary[]>{
+    const params = id ? { id } : undefined;
+    const { data } = await apiClient.get<RecurringBookingSummary[]>('/Bookings/recurring-groups', { params });
+    return data;
+  },
+
+  async getBookingIndividual (id?: number, status?: string): Promise<Booking[]>{
+    const params = id || status ? { ...(id && { id }), ...(status && { status }) } : undefined;
+    const { data } = await apiClient.get<Booking[]>('/Bookings/individual', { params });
+    console.log('Fetched individual bookings data controller:', data);
     return data;
   },
 };

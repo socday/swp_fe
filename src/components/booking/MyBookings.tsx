@@ -1,6 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Label } from "../ui/label";
 import { Calendar, Clock, MapPin, XCircle } from "lucide-react";
 import { motion } from "motion/react";
 import { RoomImageGallery } from "../shared/RoomImageGallery";
@@ -13,8 +15,15 @@ interface MyBookingsProps {
 }
 
 export function MyBookings({ userId }: MyBookingsProps) {
-  const { bookings, loading, handleCancelBooking, getStatusBadgeType } =
-    useMyBookings(userId);
+  const { 
+    bookings, 
+    recurringGroups,
+    loading, 
+    bookingType,
+    setBookingType,
+    handleCancelBooking, 
+    getStatusBadgeType 
+  } = useMyBookings(userId);
 
   const renderStatusBadge = (status: string) => {
     const type = getStatusBadgeType(status);
@@ -46,13 +55,30 @@ export function MyBookings({ userId }: MyBookingsProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>My Bookings</CardTitle>
-        <CardDescription>View and manage your facility reservations</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>My Bookings</CardTitle>
+            <CardDescription>View and manage your facility reservations</CardDescription>
+          </div>
+          <div className="w-64">
+            <Label htmlFor="booking-type">Booking Type</Label>
+            <Select value={bookingType} onValueChange={(value: "individual" | "recurring") => setBookingType(value)}>
+              <SelectTrigger id="booking-type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="individual">Individual Bookings</SelectItem>
+                <SelectItem value="recurring">Recurring Groups</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </CardHeader>
 
       <CardContent>
-        <div className="space-y-4">
-          {bookings.map((booking, index) => {
+        {bookingType === "individual" ? (
+          <div className="space-y-4">
+            {bookings.map((booking, index) => {
             const roomImages = getRoomImages(booking.roomImageKey);
             const bookingDate = new Date(booking.date);
 
@@ -97,8 +123,7 @@ export function MyBookings({ userId }: MyBookingsProps) {
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4" />
                             <span>                            
-                              {booking.slotLabel}
-                              {booking.slotDisplayTime && ` (${booking.slotDisplayTime})`}
+                              {booking.slotDisplayTime }
                             </span>
                           </div>
                         </div>
@@ -137,12 +162,72 @@ export function MyBookings({ userId }: MyBookingsProps) {
             );
           })}
 
-          {bookings.length === 0 && (
-            <div className="py-12 text-center text-gray-500">
-              <p>No bookings found</p>
-            </div>
-          )}
-        </div>
+            {bookings.length === 0 && (
+              <div className="py-12 text-center text-gray-500">
+                <p>No individual bookings found</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {recurringGroups.map((group, index) => (
+              <motion.div
+                key={group.recurrenceId}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-lg font-semibold">{group.facilityName}</h3>
+                        <Badge className="bg-blue-500">Recurring</Badge>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          <span>
+                            {new Date(group.startDate).toLocaleDateString()} - {new Date(group.endDate).toLocaleDateString()}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          <span>{group.slotName}</span>
+                        </div>
+
+                        <div className="text-sm col-span-2">
+                          <span className="font-medium">Pattern: </span>
+                          {group.patternName}
+                        </div>
+
+                        <div className="text-sm col-span-2">
+                          <span className="font-medium">Total Bookings: </span>
+                          {group.totalBookings} ({group.approvedCount} approved, {group.pendingCount} pending, {group.rejectedCount} rejected)
+                        </div>
+                      </div>
+
+                      {group.purpose && (
+                        <div className="text-sm">
+                          <span className="text-gray-600">Purpose: </span>
+                          {group.purpose}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+
+            {recurringGroups.length === 0 && (
+              <div className="py-12 text-center text-gray-500">
+                <p>No recurring booking groups found</p>
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

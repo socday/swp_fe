@@ -74,7 +74,7 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[70vw] w-[70vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Book {room.name}</DialogTitle>
           <DialogDescription>
@@ -315,7 +315,7 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
             <div className="space-y-3">
               <Label className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
-                Select Time Slots das (Multiple Selection)
+                Select Time Slots (Multiple Selection)
               </Label>
 
               {allSlots.length > 0 ? (

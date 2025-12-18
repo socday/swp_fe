@@ -2,9 +2,9 @@ import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { bookingsApi } from "../../api/api";
 import { slotsApi } from "../../api/services/slotsApi";
-import { User } from "../../App";
-import { TimeSlot } from "../../api/timeSlots";
-import { Room } from "../../api/api";
+import type { User } from "../../App";
+import type { TimeSlot } from "../../api/timeSlots";
+import type { Room } from "../../api/api";
 
 export type RecurrencePattern = 1 | 2 | 3 | 4 | 5 | 6; // Daily=1, Weekly=2, Weekdays=3, Weekends=4, Monthly=5, Custom=6
 
@@ -48,8 +48,8 @@ export function useBookingDialog(
 
     const fetchSlots = async () => {
       setLoadingSlots(true);
+      console.log('Fetching slots for booking type132123132:', bookingType);
       try {
-        // For recurring bookings, fetch all slots instead of available slots
         if (bookingType === "recurring") {
           const apiSlots = await slotsApi.getAll();
           console.log('Fetched all slots for recurring booking:', apiSlots);
@@ -65,7 +65,6 @@ export function useBookingDialog(
             setAllSlots(timeSlots);
           }
         } else {
-          // For single bookings, fetch available slots for the specific facility and date
           const facilityId = normaliseRoomId(room.id);
           const dateStr = date ? toIsoDate(date) : undefined;
           
@@ -101,7 +100,7 @@ export function useBookingDialog(
       }
     };
 
-
+    fetchSlots();
     return () => {
       isMounted = false;
     };
@@ -182,6 +181,7 @@ export function useBookingDialog(
       const currentTime = getCurrentTimeString();
       return allSlots.filter((slot) => slot.startTime > currentTime);
     }
+    console.log('All slots for booking type', bookingType, ':', allSlots);
     return allSlots;
   }, [allSlots, bookingType, date]);
 

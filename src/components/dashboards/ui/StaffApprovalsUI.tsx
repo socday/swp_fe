@@ -4,7 +4,7 @@ import { Button } from "../../ui/button";
 import { Calendar, Clock, User, Check, X, CalendarRange } from "lucide-react";
 import { RoomImageGallery } from "../../shared/RoomImageGallery";
 import { getRoomImages } from "../../../api/roomImages";
-import { Booking } from "../../../api/api";
+import type { Booking } from "../../../api/api";
 
 interface StaffApprovalsUIProps {
   pendingBookings: Booking[];
@@ -84,7 +84,7 @@ export function StaffApprovalsUI({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4" />
-                        <span>
+                        <span>                          
                           {booking.userName} ({booking.userRole})
                         </span>
                       </div>

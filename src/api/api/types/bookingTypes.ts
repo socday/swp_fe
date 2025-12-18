@@ -7,6 +7,7 @@ import type { User } from './userTypes';
 export interface Booking {
   bookingId: number;
   userId: number;
+  userName?: string;
   facilityId: number;
   bookingDate: string;
   slotId: number;
@@ -24,6 +25,10 @@ export interface Booking {
   facility?: Facility;
   slot?: Slot;
   approver?: User;
+  startTime?: string;
+  endTime?: string;
+  slotName?: string;
+  facilityName?: string;
 }
 
 export interface GetBookingRepsonse {
@@ -40,13 +45,14 @@ export interface GetBookingRepsonse {
   startTime: Date;
   status: string;
   userId: number;
+  userName:string;
 }
 
 export interface BookingCreateRequest {
   facilityId: number;
   bookingDate: string;
   slotId: number;
-  purpose?: string;
+  purpose?: string | undefined;
 }
 
 export interface BookingStatusUpdate {
@@ -82,4 +88,35 @@ export interface BookingFilterRequest {
 export interface StaffCancelRequest {
   staffId: number;
   reason: string;
+}
+
+export interface RecurringBookingSummary {
+  recurrenceGroupId: string; // UUID format
+  userId: number;
+  userName: string;
+  facilityId: number;
+  facilityName: string;
+  slotId: number;
+  slotName: string;
+  purpose: string;
+  startDate: string; // ISO date format "YYYY-MM-DD"
+  endDate: string;   // ISO date format "YYYY-MM-DD"
+  totalBookings: number;
+  pendingCount: number;
+  approvedCount: number;
+  rejectedCount: number;
+  cancelledCount: number;
+  createdAt: string; // ISO DateTime format
+}
+
+export interface BookingIndividualSummary {
+  id: number;
+  userId: number;
+  bookingDate: string; // "2025-12-18"
+  totalAmount: number;
+  status: "Pending" | "Approved" | "Rejected" | "Cancelled" | "Completed"; // Union type for better safety
+  facilityName: string;
+  slotName: string;
+  startTime: string;   // "19:30:00"
+  endTime: string;     // "21:00:00"
 }

@@ -2,22 +2,40 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { bookingsApi, Booking, securityTasksApi } from '../../api/api';
 import type { BookingForSecurityTask } from '../../api/services/securityTasksApi';
+import type { RecurringBookingSummary } from '../../api/api/types';
 
 export function useBookingApprovals() {
+  const [bookingType, setBookingType] = useState<"individual" | "recurring">("individual");
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [recurringGroups, setRecurringGroups] = useState<RecurringBookingSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadBookings();
-  }, []);
+  }, [bookingType]);
 
   const loadBookings = async () => {
     setLoading(true);
-    const data = await bookingsApi.getAll();
-    // Sort by request date (newest first)
-    const sorted = data.sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
-    setBookings(sorted);
-    setLoading(false);
+    try {
+      if (bookingType === "individual") {
+        const data = await bookingsApi.getBookingIndividual();
+        console.log('Fetched individual bookings for approval:', data);
+        // Sort by request date (newest first)
+        const sorted = data.sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
+        setBookings(sorted);
+        setRecurringGroups([]);
+      } else {
+        // Fetch all recurring booking groups (no specific user filter for admin)
+        const groups = await bookingsApi.getBookingRecurrenceGroup();
+        setRecurringGroups(groups);
+        setBookings([]);
+      }
+    } catch (error) {
+      console.error('Failed to load bookings:', error);
+      toast.error('Failed to load bookings');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const normalizeBookingId = (bookingId: string | number): number =>
@@ -84,7 +102,10 @@ export function useBookingApprovals() {
 
   return {
     bookings,
+    recurringGroups,
     loading,
+    bookingType,
+    setBookingType,
     pendingRequests,
     approvedRequests,
     rejectedRequests,
