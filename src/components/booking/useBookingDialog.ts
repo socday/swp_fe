@@ -2,11 +2,13 @@ import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { bookingsApi } from "../../api/api";
 import { slotsApi } from "../../api/services/slotsApi";
+import { bookingsController } from "../../api/api/controllers/bookingsController";
 import type { User } from "../../App";
 import type { TimeSlot } from "../../api/timeSlots";
 import type { Room } from "../../api/api";
+import type { RecurringConflictCheckResponse } from "../../api/api/types";
 
-export type RecurrencePattern = 1 | 2 | 3 | 4 | 5 | 6; // Daily=1, Weekly=2, Weekdays=3, Weekends=4, Monthly=5, Custom=6
+export type RecurrencePattern = 1 | 2 | 3 | 4 | 5 | 6 | 7; // Daily=1, Weekly=2, Weekdays=3, Weekends=4, Monthly=5, Custom=6
 
 export function useBookingDialog(
   room: Room,
@@ -42,13 +44,16 @@ export function useBookingDialog(
   const [autoFindAlternative, setAutoFindAlternative] = useState<boolean>(true);
   const [skipConflicts, setSkipConflicts] = useState<boolean>(true);
 
+  // Conflict checking states
+  const [conflictCheckResult, setConflictCheckResult] = useState<RecurringConflictCheckResponse | null>(null);
+  const [checkingConflicts, setCheckingConflicts] = useState<boolean>(false);
+
   // Fetch slots based on booking type
   useEffect(() => {
     let isMounted = true;
 
     const fetchSlots = async () => {
       setLoadingSlots(true);
-      console.log('Fetching slots for booking type132123132:', bookingType);
       try {
         if (bookingType === "recurring") {
           const apiSlots = await slotsApi.getAll();
@@ -141,6 +146,7 @@ export function useBookingDialog(
     setSelectedDays([]);
     setRecurrencePattern(2);
     setInterval(1);
+    setConflictCheckResult(null);
   };
 
   const normaliseRoomId = (roomId: string) => {
@@ -230,6 +236,44 @@ export function useBookingDialog(
       toast.error(failureMessage);
       const failedSlots = selectedSlots.filter((_, index) => !responses[index]?.success);
       setSelectedSlots(failedSlots);
+    }
+  };
+
+  const checkRecurringConflicts = async (facilityId: number, slotId: number): Promise<RecurringConflictCheckResponse | null> => {
+    const startDateStr = toIsoDate(startDate!);
+    const endDateStr = toIsoDate(endDate!);
+
+    // Determine daysOfWeek based on recurrence pattern
+    let daysOfWeek: number[] = [];
+    if (recurrencePattern === 6) {
+      daysOfWeek = selectedDays;
+    } else if (recurrencePattern === 2) {
+      const dayOfWeek = startDate!.getDay();
+      daysOfWeek = [dayOfWeek === 0 ? 8 : dayOfWeek + 1];
+    } else if (recurrencePattern === 3) {
+      daysOfWeek = [2, 3, 4, 5, 6];
+    } else if (recurrencePattern === 4) {
+      daysOfWeek = [7, 8];
+    }
+
+    try {
+      const result = await bookingsController.checkRecurringConflicts({
+        facilityId,
+        slotId,
+        purpose,
+        startDate: startDateStr,
+        endDate: endDateStr,
+        pattern: recurrencePattern,
+        daysOfWeek,
+        interval,
+        autoFindAlternative,
+        skipConflicts,
+      });
+      return result;
+    } catch (error) {
+      console.error("Failed to check conflicts:", error);
+      toast.error("Failed to check conflicts. Please try again.");
+      return null;
     }
   };
 
@@ -330,6 +374,27 @@ export function useBookingDialog(
       if (bookingType === "single") {
         await submitSingleBookings(facilityId);
       } else {
+        // For recurring bookings, check conflicts first for the first slot
+        setCheckingConflicts(true);
+        const conflictResult = await checkRecurringConflicts(facilityId, selectedSlots[0].id);
+        setCheckingConflicts(false);
+
+        if (conflictResult) {
+          setConflictCheckResult(conflictResult);
+          
+          // If there are blocked dates and we're not skipping conflicts, show the conflict info and stop
+          if (conflictResult.blockedCount > 0 && !skipConflicts) {
+            toast.warning("Please review conflicts before proceeding");
+            setSubmitting(false);
+            return;
+          }
+
+          // Show conflict summary even if we can proceed
+          if (conflictResult.conflictCount > 0) {
+            toast.info(conflictResult.message);
+          }
+        }
+
         await submitRecurringBookings(facilityId);
       }
     } catch (error) {
@@ -369,5 +434,7 @@ export function useBookingDialog(
     availableSlots,
     allSlots,
     convertToVietnameseDay,
+    conflictCheckResult,
+    checkingConflicts,
   };
 }

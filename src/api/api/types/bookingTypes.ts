@@ -134,3 +134,43 @@ export interface BookingIndividualSummary {
   startTime: string;   // "19:30:00"
   endTime: string;     // "21:00:00"
 }
+
+export interface BookingConflictDto {
+  bookingId: number;
+  userId: number;
+  userName: string;
+  userEmail: string;
+  userRole: string;
+  facilityId: number;
+  facilityName: string;
+  bookingDate: string;
+  slotId: number;
+  slotName: string;
+  startTime: string;
+  endTime: string;
+  purpose: string;
+  status: string;
+  canOverride: boolean;
+  message: string;
+}
+
+export interface RecurringConflictDto {
+  bookingDate: string;
+  dayOfWeek: string;
+  conflictingBooking?: BookingConflictDto;
+  hasConflict: boolean;
+  canProceed: boolean;
+  alternativeFacilityId?: string;
+  alternativeFacilityName?: string;
+  message: string;
+}
+
+export interface RecurringConflictCheckResponse {
+  success: boolean;
+  message: string;
+  totalDates: number;
+  conflictCount: number;
+  canProceedCount: number;
+  blockedCount: number;
+  conflicts: RecurringConflictDto[];
+}

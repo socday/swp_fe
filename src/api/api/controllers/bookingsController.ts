@@ -10,6 +10,8 @@ import type {
   BookingStatusUpdate,
   RecurringBookingSummary,
   StaffCancelRequest,
+  BookingConflictDto,
+  RecurringConflictCheckResponse,
 } from '../types';
 
 export const bookingsController = {
@@ -79,6 +81,16 @@ export const bookingsController = {
     const params = id || status ? { ...(id && { id }), ...(status && { status }) } : undefined;
     const { data } = await apiClient.get<Booking[]>('/Bookings/individual', { params });
     console.log('Fetched individual bookings data controller:', data);
+    return data;
+  },
+
+  async checkBookingConflict(payload: BookingCreateRequest): Promise<{ hasConflict: boolean; conflict?: BookingConflictDto; message?: string }> {
+    const { data } = await apiClient.post<{ hasConflict: boolean; conflict?: BookingConflictDto; message?: string }>('/Bookings/check-conflict', payload);
+    return data;
+  },
+
+  async checkRecurringConflicts(payload: BookingRecurringRequest): Promise<RecurringConflictCheckResponse> {
+    const { data } = await apiClient.post<RecurringConflictCheckResponse>('/Bookings/check-recurring-conflicts', payload);
     return data;
   },
 };
