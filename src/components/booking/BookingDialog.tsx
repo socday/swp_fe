@@ -53,6 +53,8 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
     availableSlots,
     allSlots,
     convertToVietnameseDay,
+    conflictCheckResult,
+    checkingConflicts,
   } = useBookingDialog(room, initialDate, onSuccess, onClose, userRole);
 
   const roomImages = getRoomImages(room.id);
@@ -68,6 +70,7 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
       4: "Weekends",
       5: "Monthly",
       6: "Custom",
+      7: "Semester",
     };
     return labels[pattern];
   };
@@ -212,6 +215,7 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
                     <SelectItem value="4">Weekends - Saturday and Sunday only</SelectItem>
                     <SelectItem value="5">Monthly - Same date each month</SelectItem>
                     <SelectItem value="6">Custom - Choose specific days</SelectItem>
+                    <SelectItem value="7">Semester - Every semester</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -307,6 +311,108 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
                       <SelectItem value="4">4</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+            )}
+
+            {/* Conflict Check Result - Only for Recurring */}
+            {bookingType === "recurring" && conflictCheckResult && (
+              <div className="border-t pt-4">
+                <div className={`rounded-lg p-4 ${
+                  conflictCheckResult.blockedCount > 0 && !skipConflicts
+                    ? 'bg-red-50 border-2 border-red-300'
+                    : conflictCheckResult.conflictCount > 0
+                    ? 'bg-yellow-50 border-2 border-yellow-300'
+                    : 'bg-green-50 border-2 border-green-300'
+                }`}>
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <h3 className={`font-semibold text-lg ${
+                        conflictCheckResult.blockedCount > 0 && !skipConflicts
+                          ? 'text-red-800'
+                          : conflictCheckResult.conflictCount > 0
+                          ? 'text-yellow-800'
+                          : 'text-green-800'
+                      }`}>
+                        Conflict Check Results
+                      </h3>
+                    </div>
+
+                    <p className={`text-sm font-medium ${
+                      conflictCheckResult.blockedCount > 0 && !skipConflicts
+                        ? 'text-red-700'
+                        : conflictCheckResult.conflictCount > 0
+                        ? 'text-yellow-700'
+                        : 'text-green-700'
+                    }`}>
+                      {conflictCheckResult.message}
+                    </p>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="bg-white rounded-md p-3 shadow-sm">
+                        <div className="text-xs text-gray-600 mb-1">Total Dates</div>
+                        <div className="text-2xl font-bold text-gray-900">{conflictCheckResult.totalDates}</div>
+                      </div>
+                      <div className="bg-white rounded-md p-3 shadow-sm">
+                        <div className="text-xs text-green-600 mb-1">Can Proceed</div>
+                        <div className="text-2xl font-bold text-green-600">{conflictCheckResult.canProceedCount}</div>
+                      </div>
+                      <div className="bg-white rounded-md p-3 shadow-sm">
+                        <div className="text-xs text-yellow-600 mb-1">Conflicts</div>
+                        <div className="text-2xl font-bold text-yellow-600">{conflictCheckResult.conflictCount}</div>
+                      </div>
+                      <div className="bg-white rounded-md p-3 shadow-sm">
+                        <div className="text-xs text-red-600 mb-1">Blocked</div>
+                        <div className="text-2xl font-bold text-red-600">{conflictCheckResult.blockedCount}</div>
+                      </div>
+                    </div>
+
+                    {conflictCheckResult.conflicts && conflictCheckResult.conflicts.length > 0 && (
+                      <details className="mt-4">
+                        <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
+                          View detailed conflicts ({conflictCheckResult.conflicts.filter(c => c.hasConflict).length} dates)
+                        </summary>
+                        <div className="mt-3 max-h-60 overflow-y-auto space-y-2">
+                          {conflictCheckResult.conflicts.filter(c => c.hasConflict).map((conflict, index) => (
+                            <div
+                              key={index}
+                              className={`p-3 rounded-md text-sm ${
+                                conflict.canProceed
+                                  ? 'bg-yellow-100 border border-yellow-300'
+                                  : 'bg-red-100 border border-red-300'
+                              }`}
+                            >
+                              <div className="font-medium">
+                                {conflict.bookingDate} - {conflict.dayOfWeek}
+                              </div>
+                              <div className="text-xs mt-1">{conflict.message}</div>
+                              {conflict.alternativeFacilityName && (
+                                <div className="text-xs mt-1 text-green-700">
+                                  Alternative: {conflict.alternativeFacilityName}
+                                </div>
+                              )}
+                              {conflict.conflictingBooking && (
+                                <div className="text-xs mt-1 text-gray-600">
+                                  Booked by: {conflict.conflictingBooking.userName} ({conflict.conflictingBooking.userRole})
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {checkingConflicts && bookingType === "recurring" && (
+              <div className="border-t pt-4">
+                <div className="rounded-lg bg-blue-50 border-2 border-blue-300 p-4">
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                    <span className="text-blue-800 font-medium">Checking for conflicts...</span>
+                  </div>
                 </div>
               </div>
             )}

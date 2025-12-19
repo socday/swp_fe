@@ -118,8 +118,7 @@ export function StaffApprovalsUI({
                             {booking.campus === "FU_FPT" ? "FU FPT" : "NVH"}
                           </Badge>
                         </div>
-                        <h3 className="text-lg">{booking.roomName}</h3>
-                        <p className="text-sm text-gray-600">{booking.building}</p>
+                        <h3 className="text-lg">{booking.facilityName}</h3>
                       </div>
                     </div>
 
