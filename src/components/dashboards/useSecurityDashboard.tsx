@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import {
   securityApi,
@@ -52,6 +52,14 @@ const roomTimeSlots = roomBookings.map(b => ({
   label: `${b.date} · ${b.startTime} - ${b.endTime}`,
 }));
 
+const bookingMap = useMemo(() => {
+  const map: Record<number, FrontendBooking> = {};
+  approvedBookings.forEach(b => {
+    map[b.id] = b;
+  });
+  return map;
+}, [approvedBookings]);
+
 
 useEffect(() => {
   setSelectedTimeStart("");
@@ -67,7 +75,9 @@ useEffect(() => {
     if (activeTab === "tasks") loadTasks();
     if (activeTab === "schedule") loadApprovedBookings();
     if (activeTab === "inspection") loadRooms();
-    if (activeTab === "reports") loadReports();  
+    if (activeTab === "reports") 
+      loadReports(); 
+    loadApprovedBookings();  
   }, [activeTab]);
 
   const loadTasks = async () => {
@@ -136,10 +146,6 @@ const handleSubmitReport = async () => {
     reportType,
     description: `
 ${reportDescription}
-
-Date: ${selectedBooking.date}
-Time: ${selectedBooking.startTime} - ${selectedBooking.endTime}
-Booking ID: ${selectedBooking.id}
 `.trim(),
   };
 
@@ -205,6 +211,7 @@ Booking ID: ${selectedBooking.id}
     upcomingDates,
     rooms,
     loading,
+    bookingMap,
 
     roomBookings,
     selectedTimeStart,

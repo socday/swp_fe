@@ -59,18 +59,16 @@ export interface FrontendReport {
   description: string;
   reportType: string;
   status: string;
-  createdAt: string; // Required based on your JSON
-  createdBy: string; // Mapped from your email field
-  facilityName: string;
-  // Reporter details (may be present depending on backend)
-  reporterId?: number;
-  reporterRole?: string;
-  
-  // Optional/Nullable fields based on previous structure
-  facilityId?: number;
-  bookingId?: number;
+
+  createdAt: string;
   resolvedAt?: string;
+
+  createdBy?: string;    
+  facilityId?: number;
+  facilityName?: string;
+  bookingId?: number;
 }
+
 
 export interface FrontendNotification {
   id: number;
@@ -162,16 +160,12 @@ export function adaptReport(backend: Report): FrontendReport {
     status: backend.status,
 
     createdAt: backend.createdAt,
-    createdBy: backend.user?.fullName ?? 'Unknown',
-
-    reporterId: backend.user?.userId,
-    reporterRole: backend.user?.roleName || backend.user?.role?.name,
-
-    facilityName: backend.facility?.facilityName ?? '',
-    facilityId: backend.facilityId,
-
-    bookingId: backend.bookingId,
     resolvedAt: backend.resolvedAt,
+
+    createdBy: backend.createdBy,
+    facilityId: backend.facilityId,
+    facilityName: backend.facilityName,
+    bookingId: backend.bookingId,
   };
 }
 

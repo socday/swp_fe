@@ -194,6 +194,10 @@ export function SecurityDashboard({ user, onLogout }) {
                         <TableHead>Title</TableHead>
                         <TableHead>Description</TableHead>
                         <TableHead>Type</TableHead>
+                        <TableHead>Date</TableHead> 
+                        <TableHead>Room</TableHead>
+                        <TableHead>Booking ID</TableHead>
+                        <TableHead>Created By</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Created At</TableHead>
                       </TableRow>
@@ -202,11 +206,31 @@ export function SecurityDashboard({ user, onLogout }) {
                     <TableBody>
                       {s.reports.map(report => (
                         <TableRow key={report.reportId}>
-                          <TableCell>{report.title}</TableCell>
-                          <TableCell>{report.description}</TableCell>
+                         <TableCell>{report.title}</TableCell>
+                          <TableCell className="max-w-xs truncate">
+                            {report.description}
+                          </TableCell>
                           <TableCell>{report.reportType}</TableCell>
-                          <TableCell>{report.status}</TableCell>
-                          <TableCell>{new Date(report.createdAt).toLocaleString()}</TableCell>
+                          <TableCell>
+                              {s.bookingMap[report.bookingId]?.date
+                                ? new Date(s.bookingMap[report.bookingId].date).toLocaleDateString()
+                                : "—"}
+                            </TableCell>
+                          <TableCell>{report.facilityName ?? "—"}</TableCell>
+                              <TableCell>
+                                {report.bookingId && s.bookingMap[report.bookingId]
+                                  ? `${s.bookingMap[report.bookingId].startTime} - ${s.bookingMap[report.bookingId].endTime}`
+                                  : "—"}
+                              </TableCell>
+                          <TableCell>{report.createdBy ?? "—"}</TableCell>
+
+                          <TableCell>
+                            <Badge>{report.status}</Badge>
+                          </TableCell>
+
+                          <TableCell>
+                            {new Date(report.createdAt).toLocaleString()}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
