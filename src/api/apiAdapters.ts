@@ -23,6 +23,7 @@ export interface FrontendFacility {
   id: number;
   name: string;
   capacity: number;
+  campusName: string;
   status: string;
   imageUrl?: string;
   description?: string;
@@ -49,8 +50,8 @@ export interface FrontendBooking {
   userName?: string;
   facilityName?: string;
 
-  startTime: string;     
-  endTime: string;  
+  startTime?: string;     
+  endTime?: string;  
 }
 
 export interface FrontendReport {
@@ -99,18 +100,17 @@ export function adaptCampus(backend: Campus): FrontendCampus {
 /**
  * Map Facility from backend to frontend format
  */
-export function adaptFacility(backend: Facility): FrontendFacility {
+export function adaptFacility(backend: GetFacilityResponse): FrontendFacility {
   return {
     id: backend.facilityId,
     name: backend.facilityName,
-    campusId: backend.campusId,
-    typeId: backend.typeId,
-    capacity: backend.capacity,
+    capacity: backend.facilityCapacity,
+    typeName: backend.typeName,
+    campusName: backend.campusName,
+
     status: backend.status,
     imageUrl: backend.imageUrl,
-    description: backend.description,
-    campus: backend.campus ? adaptCampus(backend.campus) : undefined,
-    typeName: backend.type?.typeName,
+
   };
 }
 
@@ -131,20 +131,20 @@ export function adaptSlot(backend: Slot): FrontendSlot {
  * Map Booking from backend to frontend format
  */
 export function adaptBooking(
-  backend: GetBookingResponse
+  backend: Booking 
 ): FrontendBooking {
   return {
     id: backend.bookingId,
     userId: backend.userId,
     facilityId: backend.facilityId,
     facilityName: backend.facilityName,
-    date: backend.bookingDate.split("T")[0],
-    startTime: backend.startTime,
+    date: backend.bookingDate,
+    slotId: backend.slotId,
+    startTime: backend.startTime ,
     endTime: backend.endTime,
     status: backend.status,
     purpose: backend.purpose,
     rejectionReason: backend.rejectionReason,
-    userName: backend.bookedBy,
   };
 }
 
@@ -200,8 +200,6 @@ export function adaptSlots(backends: Slot[]): FrontendSlot[] {
 }
 
 export function adaptBookings(backends: Booking[]): FrontendBooking[] {
-  console.log('Adapting bookings:', backends);
-  console.log('Adapting bookings map:', backends.map(adaptBooking));
   return backends.map(adaptBooking);
 }
 

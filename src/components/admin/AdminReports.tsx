@@ -20,8 +20,6 @@ export function AdminReports() {
        
   return (
     <Card className="mt-6">
-        console.log(r);
-
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
