@@ -36,7 +36,7 @@ useEffect(() => {
   if (activeTab === "reports") {
     loadApprovedBookings();
     loadMyReports();
-    loadFacilities(); // ✅ BẮT BUỘC
+    loadFacilities(); 
   }
 }, [activeTab]);
   const facilityNameToIdMap = useMemo(() => {

@@ -101,22 +101,22 @@ const s = useStudentDashboard(user);
                 </CardHeader>
 
                 <CardContent className="space-y-4">
-<Select
-  value={s.selectedBookingId?.toString() ?? ""}
-  onValueChange={(v) => s.setSelectedBookingId(Number(v))}
->
-  <SelectTrigger>
-    <SelectValue placeholder="Select a booking" />
-  </SelectTrigger>
+                    <Select
+                      value={s.selectedBookingId?.toString() ?? ""}
+                      onValueChange={(v) => s.setSelectedBookingId(Number(v))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a booking" />
+                      </SelectTrigger>
 
-  <SelectContent>
-    {s.approvedBookings.map(b => (
-      <SelectItem key={b.id} value={b.id.toString()}>
-        {b.facilityName} · {b.date} · {b.startTime} - {b.endTime}
-      </SelectItem>
-    ))}
-  </SelectContent>
-</Select>
+                      <SelectContent>
+                        {s.approvedBookings.map(b => (
+                          <SelectItem key={b.id} value={b.id.toString()}>
+                            {b.facilityName} · {b.date} · {b.startTime} - {b.endTime}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   <Textarea
                     placeholder="Describe the issue..."
                     value={s.reportDescription}
