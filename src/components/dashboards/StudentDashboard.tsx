@@ -38,6 +38,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
 import { useStudentDashboard } from "./useStudentDashboard";
+import { User } from 'lucide-react';
 
 interface StudentDashboardProps {
   user: User;
@@ -45,7 +46,7 @@ interface StudentDashboardProps {
 }
 
 export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
-const s = useStudentDashboard();
+const s = useStudentDashboard(user);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -99,24 +100,29 @@ const s = useStudentDashboard();
                 </CardHeader>
 
                 <CardContent className="space-y-4">
-                  <Select value={s.reportType} onValueChange={s.setReportType}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Equipment Issue">Equipment Issue</SelectItem>
-                      <SelectItem value="Booking Issue">Booking Issue</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+<Select
+  value={s.selectedBookingId?.toString() ?? ""}
+  onValueChange={(v) => s.setSelectedBookingId(Number(v))}
+>
+  <SelectTrigger>
+    <SelectValue placeholder="Select a booking" />
+  </SelectTrigger>
 
+  <SelectContent>
+    {s.approvedBookings.map(b => (
+      <SelectItem key={b.id} value={b.id.toString()}>
+        {b.facilityName} · {b.date} · {b.startTime} - {b.endTime}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
                   <Textarea
                     placeholder="Describe the issue..."
                     value={s.reportDescription}
                     onChange={(e) => s.setReportDescription(e.target.value)}
                   />
 
-                  <Button onClick={() => s.handleCreateReport(1)}>
+                  <Button onClick={() => s.handleCreateReport()}>
                     Submit Report
                   </Button>
                 </CardContent>
@@ -139,25 +145,49 @@ const s = useStudentDashboard();
                         <TableHeader>
                           <TableRow>
                             <TableHead>Title</TableHead>
-                            <TableHead>Type</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Report Type</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Created At</TableHead>
                           </TableRow>
                         </TableHeader>
-                        <TableBody>
+
+                       <TableBody>
                           {s.reports.map((r) => (
                             <TableRow key={r.reportId}>
-                              <TableCell>{r.title}</TableCell>
-                              <TableCell>{r.reportType}</TableCell>
-                              <TableCell>
-                                <Badge>{r.status}</Badge>
+                              <TableCell className="font-medium">
+                                {r.title}
                               </TableCell>
+
+                              <TableCell className="max-w-xs truncate">
+                                {r.description}
+                              </TableCell>
+
+                              <TableCell>
+                                <Badge variant="outline">
+                                  {r.reportType}
+                                </Badge>
+                              </TableCell>
+
+                              <TableCell>
+                                <Badge
+                                  className={
+                                    r.status === "Resolved"
+                                      ? "bg-green-50 text-green-700"
+                                      : "bg-yellow-50 text-yellow-700"
+                                  }
+                                >
+                                  {r.status}
+                                </Badge>
+                              </TableCell>
+
                               <TableCell>
                                 {new Date(r.createdAt).toLocaleString()}
                               </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
+
                       </Table>
                     )}
                   </CardContent>

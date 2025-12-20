@@ -120,13 +120,11 @@ useEffect(() => {
   };
 
 const handleSubmitReport = async () => {
-  // 1. Validate bắt buộc
   if (!selectedRoomId || !selectedTimeStart || !reportDescription.trim()) {
     toast.error("Please fill all required fields");
     return;
   }
 
-  // 2. Tìm booking tương ứng
   const selectedBooking = approvedBookings.find(
     (b) =>
       b.facilityName === roomIdToNameMap[Number(selectedRoomId)] &&
@@ -138,7 +136,6 @@ const handleSubmitReport = async () => {
     return;
   }
 
-  // 3. Tạo payload gửi BE
   const payload: ReportCreateRequest = {
     facilityId: Number(selectedRoomId),
     bookingId: selectedBooking.id, 
@@ -149,10 +146,8 @@ ${reportDescription}
 `.trim(),
   };
 
-  // 4. Gửi report
   const success = await securityApi.submitReport(payload);
 
-  // 5. Handle result
   if (success) {
     toast.success("Report submitted successfully");
     resetReportForm();
