@@ -69,6 +69,7 @@ useEffect(() => {
   setLoading(true);
   setReports(await reportsApi.getAll());
   setLoading(false);
+  console.log('Reports loaded:', reports);
   };
 
   useEffect(() => {
@@ -176,6 +177,7 @@ ${reportDescription}
     ]);
     setLoading(false);
     setSubmitReportDialogOpen(true);
+    console.log('Rooms loaded:', rooms);
   };
 
 
