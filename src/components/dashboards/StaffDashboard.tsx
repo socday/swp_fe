@@ -1,4 +1,4 @@
-import { User } from "../../App";
+import type { User } from "../../App";
 import { Header } from "../shared/Header";
 import { Footer } from "../shared/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
