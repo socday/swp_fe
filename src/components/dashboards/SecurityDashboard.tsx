@@ -56,7 +56,7 @@ export function SecurityDashboard({ user, onLogout }) {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header user={user} onLogout={onLogout} title="Security Dashboard" />
 
-      <div className="max-w-7xl mx-auto px-4 py-8 flex-grow">
+<div className="w-full max-w-7xl mx-auto px-6 py-8 flex-grow">
         <h2 className="text-[30px] mb-2">Welcome, {user.name}</h2>
         <p className="text-gray-600 mb-6">Manage security tasks and inspections</p>
 
@@ -196,7 +196,7 @@ export function SecurityDashboard({ user, onLogout }) {
                         <TableHead>Type</TableHead>
                         <TableHead>Date</TableHead> 
                         <TableHead>Room</TableHead>
-                        <TableHead>Booking ID</TableHead>
+                        <TableHead>Slot Booking</TableHead>
                         <TableHead>Created By</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Created At</TableHead>
@@ -256,14 +256,19 @@ export function SecurityDashboard({ user, onLogout }) {
 
 /* --- Helper Subcomponents (UI only) --- */
 
-function StatCard({ title, value, color = "black" }) {
+function StatCard({ title, value, color = "text-black" }) {
   return (
-    <Card>
-      <CardHeader><CardTitle className="text-sm">{title}</CardTitle></CardHeader>
-      <CardContent><div className={`text-2xl text-${color}-600`}>{value}</div></CardContent>
+<Card className="h-[110px] flex flex-col justify-between">
+      <CardHeader>
+        <CardTitle className="text-sm">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className={`text-2xl font-semibold ${color}`}>{value}</div>
+      </CardContent>
     </Card>
   );
 }
+
 
 function InspectionTabUI({ s }) {
   return (
