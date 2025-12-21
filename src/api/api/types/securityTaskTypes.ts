@@ -8,6 +8,7 @@ export interface SecurityTask {
   priority: string;
 
   assignedToUserId?: number;
+  assignedToUserName?: string;
   createdBy?: number;
 
   reportNote?: string;

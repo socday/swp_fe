@@ -138,9 +138,14 @@ export function StaffSecurityTasksUI({
               <Card key={task.taskId} className="mb-4">
                 <CardContent className="pt-6">
                     <div className="flex justify-between">
-                        <div>
+                        <div className="flex-1">
                             <h3 className="font-bold">{task.title}</h3>
                             <p className="text-sm text-gray-500">{task.description}</p>
+                            {task.assignedToUserName && (
+                              <p className="text-sm text-blue-600 mt-1">
+                                Assigned to: {task.assignedToUserName}
+                              </p>
+                            )}
                         </div>
                         <div className="flex gap-2">
                              {getPriorityBadge(task.priority)}

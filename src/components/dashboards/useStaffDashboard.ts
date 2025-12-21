@@ -123,14 +123,14 @@ export function useStaffDashboard() {
 const loadReports = async () => {
   setLoading(true);
   try {
-    const [reportsData, bookingsData] = await Promise.all([
+    const [reportsData, bookingsDataPaginated] = await Promise.all([
       staffApi.getReports(),
       staffApi.getBookingHistory(),
     ]);
     console.log("Fetched reports data:", reportsData);
-    console.log("Fetched bookings data for reports:", bookingsData);
+    console.log("Fetched bookings data for reports:", bookingsDataPaginated);
     const bookingMap = new Map(
-      bookingsData.map((b) => [Number(b.id), b])
+      bookingsDataPaginated.bookings.map((b) => [Number(b.id), b])
     );
 
     const mergedReports = reportsData.map((r) => {
@@ -147,6 +147,7 @@ const loadReports = async () => {
 
     setReports(mergedReports);
   } catch (e) {
+    console.error("Failed to load reports:", e);
     toast.error("Failed to load reports");
   } finally {
     setLoading(false);
