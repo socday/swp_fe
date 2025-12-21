@@ -154,32 +154,11 @@ const loadReports = async () => {
 
     const result = await bookingsApi.updateStatus(numericId, { status: "Approved" });
     if (result.success) {
-      toast.success(result.message || "Booking approved successfully");
+      toast.success(result.message || "Booking approved successfully. Security task created automatically.");
       loadPendingBookings();
-
-      const bookingContext = booking;
-      console.log("Booking context for security task assignment:", bookingContext);
-        if (!bookingContext) {
-          console.warn('Unable to find booking for security task assignment');
-          return;
-        }
-      const autoAssignResult = await securityTasksApi.autoAssignForBooking();
-      if (autoAssignResult.error) {
-        toast.error(`Security task auto-assignment failed: ${autoAssignResult.error}`);
-      }
-      else {
-        const success = await securityTasksApi.createSecurityTask({
-            title: `Security Task for Booking #${numericId}`,
-            description: `Auto-assigned open room security task for approved booking #${numericId}`,
-            priority: undefined,
-            assignedToId: autoAssignResult.assignedTo?.id ?? 0
-        })
-        if (success) {
-          toast.success(autoAssignResult.success);
-        }
-      }
-          
-    } else toast.error(result.error || "Failed to approve booking");
+    } else {
+      toast.error(result.error || "Failed to approve booking");
+    }
   };
 
   const handleRejectBooking = async (id: string | number) => {

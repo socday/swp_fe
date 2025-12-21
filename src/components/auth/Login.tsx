@@ -13,7 +13,7 @@ import { loginWithGoogle } from '../../api/services/authApi';
 import { toast } from 'sonner';
 import { jwtDecode } from 'jwt-decode';
 import type { User as BackendUser } from '../../api/api';
-import './Login.css';
+import './login.css';
 
 interface DecodedToken {
   userId?: number | string;

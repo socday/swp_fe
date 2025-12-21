@@ -51,28 +51,6 @@ export function useBookingApprovals() {
   const normalizeBookingId = (bookingId: string | number): number =>
     typeof bookingId === 'string' ? parseInt(bookingId, 10) : bookingId;
 
-  const assignSecurityTaskIfPossible = async (bookingId: number) => {
-    const bookingContext = bookings.find((booking) => normalizeBookingId(booking.id) === bookingId);
-    if (!bookingContext) {
-      console.warn('Unable to find booking for security task assignment');
-      return;
-    }
-
-    try {
-      const assignment = await securityTasksApi.autoAssignForBooking(
-        bookingContext as BookingForSecurityTask
-      );
-      if (assignment.success) {
-        toast.success(assignment.message || 'Security task assigned');
-      } else if (assignment.error) {
-        toast.error(assignment.error);
-      }
-    } catch (error) {
-      console.error('Security task auto-assignment failed:', error);
-      toast.error('Security task assignment failed');
-    }
-  };
-
   const handleApprove = async (bookingId: string | number) => {
     const numericId = normalizeBookingId(bookingId);
     if (Number.isNaN(numericId)) {
@@ -82,9 +60,8 @@ export function useBookingApprovals() {
 
     const result = await bookingsApi.updateStatus(numericId, { status: 'Approved' });
     if (result.success) {
-      toast.success(result.message || 'Booking request approved');
-      await assignSecurityTaskIfPossible(numericId);
-      loadBookings();
+      toast.success(result.message || 'Booking approved. Security task created automatically.');
+      loadBookings(currentPage, pageSize);
     } else {
       toast.error(result.error || 'Failed to approve booking');
     }
@@ -100,7 +77,7 @@ export function useBookingApprovals() {
     const result = await bookingsApi.updateStatus(numericId, { status: 'Rejected' });
     if (result.success) {
       toast.success(result.message || 'Booking request rejected');
-      loadBookings();
+      loadBookings(currentPage, pageSize);
     } else {
       toast.error(result.error || 'Failed to reject booking');
     }
