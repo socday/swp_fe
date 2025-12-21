@@ -11,7 +11,7 @@ import {
   securityTasksApi,
 } from "../../api/api";
 import type { RecurringBookingSummary } from '../../api/api/types';
-import { BookingForSecurityTask } from "../../api/services/securityTasksApi";
+import { BookingForSecurityTask, SecurityStaffMember } from "../../api/services/securityTasksApi";
 
 export function useStaffDashboard() {
   const [activeTab, setActiveTab] = useState("approvals");
@@ -26,6 +26,7 @@ export function useStaffDashboard() {
   const [securityTasks, setSecurityTasks] = useState<SecurityTask[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(false);
+  const [securityStaff, setSecurityStaff] = useState<SecurityStaffMember[]>([]);
 
   // Dialog states
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
@@ -54,12 +55,25 @@ export function useStaffDashboard() {
 
   // ========================= LOADERS ========================= //
   useEffect(() => {
+    loadSecurityStaff();
+  }, []);
+
+  useEffect(() => {
     if (activeTab === "approvals") loadPendingBookings();
     else if (activeTab === "history") loadBookingHistory();
     else if (activeTab === "rooms") loadRooms();
     else if (activeTab === "security") loadSecurityTasks();
     else if (activeTab === "reports") loadReports();
   }, [activeTab, bookingType]);
+
+  const loadSecurityStaff = async () => {
+    try {
+      const staff = await securityTasksApi.getSecurityStaffWithTaskCounts();
+      setSecurityStaff(staff);
+    } catch (error) {
+      console.error('Failed to load security staff:', error);
+    }
+  };
 
   const loadPendingBookings = async () => {
     setLoading(true);
@@ -145,17 +159,26 @@ const loadReports = async () => {
   const normalizeBookingId = (rawId: string | number): number =>
     typeof rawId === "string" ? parseInt(rawId, 10) : rawId;
 
-  const handleApproveBooking = async (id: string | number, booking: Booking) => {
+  const handleApproveBooking = async (id: string | number, booking: Booking, assignedToUserId?: number) => {
     const numericId = normalizeBookingId(id);
     if (Number.isNaN(numericId)) {
       toast.error("Invalid booking identifier");
       return;
     }
 
-    const result = await bookingsApi.updateStatus(numericId, { status: "Approved" });
+    if (!assignedToUserId) {
+      toast.error("Please select a security staff member");
+      return;
+    }
+
+    const result = await bookingsApi.updateStatus(numericId, { 
+      status: "Approved",
+      assignedToUserId 
+    });
     if (result.success) {
-      toast.success(result.message || "Booking approved successfully. Security task created automatically.");
+      toast.success(result.message || "Booking approved and security task assigned.");
       loadPendingBookings();
+      loadSecurityStaff(); // Refresh staff counts
     } else {
       toast.error(result.error || "Failed to approve booking");
     }
@@ -287,6 +310,7 @@ const handleCreateSecurityTask = async (newTaskTitle: string, newTaskDescription
     securityTasks,
     reports,
     loading,
+    securityStaff,
 
     // dialogs
     selectedBooking,

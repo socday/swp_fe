@@ -10,6 +10,7 @@ import type { Booking } from "../../../api/api";
 import type { RecurringBookingSummary } from "../../../api/api/types";
 import { RecurringGroupDetailsDialog } from "../../booking/RecurringGroupDetailsDialog";
 import { useState } from "react";
+import type { SecurityStaffMember } from "../../../api/services/securityTasksApi";
 
 interface StaffApprovalsUIProps {
   bookingType: "individual" | "recurring";
@@ -17,7 +18,8 @@ interface StaffApprovalsUIProps {
   pendingBookings: Booking[];
   recurringGroups: RecurringBookingSummary[];
   loading: boolean;
-  handleApproveBooking: (id: string | number, booking: Booking) => void;
+  securityStaff: SecurityStaffMember[];
+  handleApproveBooking: (id: string | number, booking: Booking, assignedToUserId?: number) => void;
   handleRejectBooking: (id: string | number) => void;
   onRecurringGroupActionComplete?: () => void;
 }
@@ -28,12 +30,14 @@ export function StaffApprovalsUI({
   pendingBookings,
   recurringGroups,
   loading,
+  securityStaff,
   handleApproveBooking,
   handleRejectBooking,
   onRecurringGroupActionComplete,
 }: StaffApprovalsUIProps) {
   const [selectedGroup, setSelectedGroup] = useState<RecurringBookingSummary | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedStaffPerBooking, setSelectedStaffPerBooking] = useState<Record<string | number, number>>({});
 
   const formatPurpose = (purpose?: string) =>
     (purpose || "No purpose provided").replace("[SEMESTER] ", "");
@@ -189,11 +193,32 @@ export function StaffApprovalsUI({
                       </div>
                     )}
 
+                    {/* Security Staff Assignment */}
+                    <div>
+                      <Label htmlFor={`security-staff-${booking.id}`}>Assign Security Staff</Label>
+                      <Select 
+                        value={selectedStaffPerBooking[booking.id]?.toString()} 
+                        onValueChange={(value) => setSelectedStaffPerBooking({ ...selectedStaffPerBooking, [booking.id]: parseInt(value) })}
+                      >
+                        <SelectTrigger id={`security-staff-${booking.id}`}>
+                          <SelectValue placeholder="Select security staff..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {securityStaff.map(staff => (
+                            <SelectItem key={staff.userId} value={staff.userId.toString()}>
+                              {staff.fullName} ({staff.pendingTaskCount} tasks)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     {/* Action Buttons */}
                     <div className="flex gap-2">
                       <Button
-                        onClick={() => handleApproveBooking(booking.id, booking)}
+                        onClick={() => handleApproveBooking(booking.id, booking, selectedStaffPerBooking[booking.id])}
                         className="flex-1 bg-green-500 hover:bg-green-600"
+                        disabled={!selectedStaffPerBooking[booking.id]}
                       >
                         <Check className="h-4 w-4 mr-2" />
                         Approve{isSemester ? " Semester" : ""}
