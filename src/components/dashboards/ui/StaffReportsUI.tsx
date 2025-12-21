@@ -7,6 +7,7 @@ import { Label } from "../../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
 import { Calendar, FileText, User, Eye } from "lucide-react";
 import { Report } from "../../../api/api";
+import { useState } from "react";
 
 interface StaffReportsUIProps {
   reports: Report[];
@@ -49,15 +50,18 @@ export function StaffReportsUI({
         return null;
     }
   };
+const [statusFilter, setStatusFilter] = useState<"ALL" | Report["status"]>("ALL");
+const filteredReports =
+  statusFilter === "ALL"
+    ? reports
+    : reports.filter((r) => r.status === statusFilter);
 
   const getStatusBadge = (status: Report["status"]) => {
     switch (status) {
       case "Submitted":
         return <Badge className="bg-yellow-500">Submitted</Badge>;
-      case "Reviewed":
-        return <Badge className="bg-green-500">Reviewed</Badge>;
-      case "Resolved":
-        return <Badge className="bg-blue-500">Resolved</Badge>;
+      case "Pending":
+        return <Badge className="bg-green-500">Pending</Badge>;
       default:
         return null;
     }
@@ -85,14 +89,36 @@ export function StaffReportsUI({
       <Card>
         <CardHeader>
           <CardTitle>Facility Reports</CardTitle>
-          <CardDescription>Review and respond to user-submitted reports</CardDescription>
+          <CardDescription>
+            Review and respond to user-submitted reports
+          </CardDescription>
+
+          {/* FILTER STATUS */}
+          <div className="mt-4 w-48">
+            <Select
+              value={statusFilter}
+              onValueChange={(val) =>
+                setStatusFilter(val as "ALL" | Report["status"])
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All</SelectItem>
+                <SelectItem value="Submitted">Submitted</SelectItem>
+                <SelectItem value="Pending">Pending</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
+
 
         <CardContent className="space-y-4">
           {reports.length === 0 ? (
             <p className="text-center text-gray-500 py-8">No reports submitted</p>
           ) : (
-            reports.map((report) => (
+            filteredReports.map((report) => (
               <Card key={report.id}>
                 <CardContent className="pt-6">
                   <div className="space-y-4">
@@ -166,7 +192,7 @@ export function StaffReportsUI({
                 <div className="bg-gray-50 p-4 rounded space-y-2">
                   <div className="flex justify-between">
                     <p>
-                      <strong>Room:</strong> {selectedReport.roomName}
+                      <strong>Room:</strong> {selectedReport.facilityName}
                     </p>
                     {getTypeBadge(selectedReport.type)}
                   </div>
@@ -176,6 +202,11 @@ export function StaffReportsUI({
                   <p>
                     <strong>Date:</strong> {new Date(selectedReport.createdAt).toLocaleDateString()}
                   </p>
+                  {selectedReport.startTime && (
+                      <p>
+                        <strong>Start time:</strong> {selectedReport.startTime}
+                      </p>
+                    )}
                   <div className="pt-2 border-t">
                     <p className="text-sm">
                       <strong>Description:</strong>
@@ -192,13 +223,12 @@ export function StaffReportsUI({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Submitted">Submitted</SelectItem>
-                      <SelectItem value="Reviewed">Reviewed</SelectItem>
-                      <SelectItem value="Resolved">Resolved</SelectItem>
+                      <SelectItem value="Pending">Pending</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label htmlFor="reportResponse">Staff Response</Label>
                   <Textarea
                     id="reportResponse"
@@ -207,7 +237,7 @@ export function StaffReportsUI({
                     onChange={(e) => setReportResponse(e.target.value)}
                     rows={4}
                   />
-                </div>
+                </div> */}
               </>
             )}
           </div>

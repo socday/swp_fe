@@ -24,55 +24,78 @@ export function StaffDashboard({ user, onLogout }: StaffDashboardProps) {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header user={user} onLogout={onLogout} title="Staff Dashboard" />
 
-      <main className="w-full px-8 py-8 flex-grow">
-        <div className="max-w-7xl mx-auto mb-6">
-          <h2 className="text-2xl mb-2">Welcome, {user.name}</h2>
-          <p className="text-gray-600">
-            Manage facility bookings and operations
-          </p>
-        </div>
+<main className="w-full px-8 py-8 flex-grow">
+  {/* HEADER GIỮ max width */}
+  <div className="max-w-7xl mx-auto mb-6">
+    <h2 className="text-2xl mb-2">Welcome, {user.name}</h2>
+    <p className="text-gray-600">
+      Manage facility bookings and operations
+    </p>
+  </div>
 
-        <div className="flex gap-8 px-4">
-          <Tabs value={state.activeTab} onValueChange={state.setActiveTab} className="flex-1">
-            <div className="flex gap-8">
-              <TabsList className="flex flex-col h-fit space-y-2 bg-white p-4 rounded-lg shadow-sm border min-w-[200px]">
-                <TabsTrigger value="approvals" className="w-full justify-start px-4 py-3">Approvals</TabsTrigger>
-                <TabsTrigger value="create-booking" className="w-full justify-start px-4 py-3">Create Booking</TabsTrigger>
-                <TabsTrigger value="schedule" className="w-full justify-start px-4 py-3">Schedule</TabsTrigger>
-                <TabsTrigger value="history" className="w-full justify-start px-4 py-3">History</TabsTrigger>
-                <TabsTrigger value="security" className="w-full justify-start px-4 py-3">Security</TabsTrigger>
-                <TabsTrigger value="reports" className="w-full justify-start px-4 py-3">Reports</TabsTrigger>
-              </TabsList>
+  {/* TABS + CONTENT FULL WIDTH */}
+  <div className="w-full">
+    <Tabs
+      value={state.activeTab}
+      onValueChange={state.setActiveTab}
+      className="w-full"
+    >
+      <TabsList
+        className="
+          flex flex-row gap-2
+          bg-white p-2 rounded-lg shadow-sm border
+          w-full
+        "
+      >
+        <TabsTrigger value="approvals"
+        className="data-[state=active]:border-4 data-[state=active]:border-orange-500"
+        >Approvals</TabsTrigger>
+        <TabsTrigger value="create-booking"
+        className="data-[state=active]:border-4 data-[state=active]:border-orange-500"
+        >Create Booking</TabsTrigger>
+        <TabsTrigger value="schedule"
+        className="data-[state=active]:border-4 data-[state=active]:border-orange-500"
+        >Schedule</TabsTrigger>
+        <TabsTrigger value="history"
+        className="data-[state=active]:border-4 data-[state=active]:border-orange-500"
+        >History</TabsTrigger>
+        <TabsTrigger value="security"
+        className="data-[state=active]:border-4 data-[state=active]:border-orange-500"
+        >Security</TabsTrigger>
+        <TabsTrigger value="reports"
+        className="data-[state=active]:border-4 data-[state=active]:border-orange-500"
+        >Reports</TabsTrigger>
+      </TabsList>
 
-              <div className="flex-1">
-                <TabsContent value="create-booking" className="mt-0">
-                  <RoomSearch userRole="staff" />
-                </TabsContent>
+      <div className="mt-6 w-full">
+        <TabsContent value="approvals">
+          <StaffApprovalsUI {...state} />
+        </TabsContent>
 
-                <TabsContent value="approvals" className="mt-0">
-                  <StaffApprovalsUI {...state} />
-                </TabsContent>
+        <TabsContent value="create-booking">
+          <RoomSearch userRole="staff" />
+        </TabsContent>
 
-                <TabsContent value="schedule" className="mt-0">
-                  <AdminScheduleView />
-                </TabsContent>
+        <TabsContent value="schedule">
+          <AdminScheduleView />
+        </TabsContent>
 
-                <TabsContent value="history" className="mt-0">
-                  <StaffHistoryUI {...state} />
-                </TabsContent>
+        <TabsContent value="history">
+          <StaffHistoryUI {...state} />
+        </TabsContent>
 
-                <TabsContent value="security" className="mt-0">
-                  <StaffSecurityTasksUI {...state} />
-                </TabsContent>
+        <TabsContent value="security">
+          <StaffSecurityTasksUI {...state} />
+        </TabsContent>
 
-                <TabsContent value="reports" className="mt-0">
-                  <StaffReportsUI {...state} />
-                </TabsContent>
-              </div>
-            </div>
-          </Tabs>
-        </div>
-      </main>
+        <TabsContent value="reports">
+          <StaffReportsUI {...state} />
+        </TabsContent>
+      </div>
+    </Tabs>
+  </div>
+</main>
+
 
       <Footer />
     </div>

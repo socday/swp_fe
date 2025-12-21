@@ -32,12 +32,34 @@ export const staffApi = {
     });
     return result.success;
   },
-  async updateReportStatus(reportId: string, status: string, notes?: string): Promise<boolean> {
-    if (status === 'Resolved') {
-      const numericId = parseInt(reportId, 10);
-      return reportsApi.resolve(numericId, notes || '');
+ async updateReportStatus(
+  reportId: number | string,
+  status: string,
+  notes?: string
+): Promise<boolean> {
+  try {
+    const numericId = typeof reportId === 'string'
+      ? parseInt(reportId, 10)
+      : reportId;
+
+    if (Number.isNaN(numericId)) {
+      console.error("Invalid reportId:", reportId);
+      return false;
     }
-    console.warn('staffApi.updateReportStatus() partially implemented');
+
+    console.log("Updating report:", {
+      reportId: numericId,
+      status,
+      notes,
+    });
+
+    return await reportsApi.updateStatus(numericId, {
+      status,
+      staffResponse: notes,
+    });
+  } catch (error) {
+    console.error("updateReportStatus error:", error);
     return false;
-  },
+  }
+}
 };

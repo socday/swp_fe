@@ -81,6 +81,7 @@ export function useStaffDashboard() {
     const data = await staffApi.getBookingHistory();
     setBookingHistory(data);
     setLoading(false);
+    console.log("Loaded booking history:", data);
   };
 
   const loadRooms = async () => {
@@ -97,12 +98,40 @@ export function useStaffDashboard() {
     setLoading(false);
   };
 
-  const loadReports = async () => {
-    setLoading(true);
-    const data = await staffApi.getReports();
-    setReports(data);
+const loadReports = async () => {
+  setLoading(true);
+  try {
+    const [reportsData, bookingsData] = await Promise.all([
+      staffApi.getReports(),
+      staffApi.getBookingHistory(),
+    ]);
+
+    const bookingMap = new Map(
+      bookingsData.map((b) => [Number(b.id), b])
+    );
+
+    const mergedReports = reportsData.map((r) => {
+      const booking = bookingMap.get(Number(r.bookingId));
+
+      return {
+        ...r,
+        id: r.reportId,
+        roomName: r.facilityName,
+        userName: booking?.userName ?? r.createdBy,
+        startTime: booking?.startTime ?? null, 
+      };
+    });
+
+    setReports(mergedReports);
+  } catch (e) {
+    toast.error("Failed to load reports");
+  } finally {
     setLoading(false);
-  };
+  }
+};
+
+
+
 
   // ========================= ACTION HANDLERS ========================= //
 
@@ -223,11 +252,17 @@ const handleCreateSecurityTask = async (newTaskTitle: string, newTaskDescription
 
   const handleReviewReport = async () => {
     if (!selectedReport) return;
+      console.log("=== REVIEW REPORT CLICKED ===");
+  console.log("Selected report:", selectedReport);
+  console.log("Report ID being sent:", selectedReport.id);
+  console.log("Report status:", reportStatus);
+  console.log("Report response:", reportResponse);
     const success = await staffApi.updateReportStatus(
       selectedReport.id,
       reportStatus,
       reportResponse
     );
+    console.log("Update report API result:", success);
 
     if (success) {
       toast.success("Report reviewed");
@@ -235,6 +270,7 @@ const handleCreateSecurityTask = async (newTaskTitle: string, newTaskDescription
       setSelectedReport(null);
       setReportResponse("");
       loadReports();
+      console.log("Report reviewed successfully");
     } else toast.error("Failed to review report");
   };
 
