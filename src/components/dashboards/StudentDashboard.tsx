@@ -1,5 +1,5 @@
 import React from 'react';
-import { User } from "../../App";
+import type { User } from "../../App";
 import { Header } from "../shared/Header";
 import { Footer } from "../shared/Footer";
 
@@ -38,7 +38,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
 import { useStudentDashboard } from "./useStudentDashboard";
-import { User } from 'lucide-react';
 
 interface StudentDashboardProps {
   user: User;

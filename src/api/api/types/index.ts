@@ -3,6 +3,7 @@ export * from './facilityTypes';
 export * from './slotTypes';
 export * from './userTypes';
 export * from './bookingTypes';
+export type { PagedResult } from './bookingTypes';
 export * from './reportTypes';
 export * from './notificationTypes';
 export * from './securityTaskTypes';

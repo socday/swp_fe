@@ -8,6 +8,7 @@ export interface Booking {
   bookingId: number;
   userId: number;
   userName?: string;
+  bookedBy?: string;
   facilityId: number;
   bookingDate: string;
   slotId: number;
@@ -95,6 +96,13 @@ export interface BookingFilterRequest {
   pageIndex?: number;
   pageSize?: number;
   sortBy?: string;
+}
+
+export interface PagedResult<T> {
+  items: T[];
+  totalRecords: number;
+  pageIndex: number;
+  pageSize: number;
 }
 
 export interface StaffCancelRequest {

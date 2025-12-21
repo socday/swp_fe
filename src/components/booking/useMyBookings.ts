@@ -90,8 +90,11 @@ export function useMyBookings(userId: string) {
   const [bookings, setBookings] = useState<UserBookingSummary[]>([]);
   const [recurringGroups, setRecurringGroups] = useState<RecurringBookingSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalRecords, setTotalRecords] = useState(0);
 
-  const loadBookings = useCallback(async () => {
+  const loadBookings = useCallback(async (page: number = currentPage, size: number = pageSize) => {
     if (!userId) {
       setBookings([]);
       setRecurringGroups([]);
@@ -105,19 +108,23 @@ export function useMyBookings(userId: string) {
       const numericUserId = Number(userId);
       
       if (bookingType === "individual") {
-        const [rawBookings, rooms] = await Promise.all([
-          bookingsApi.getBookingIndividual(Number.isNaN(numericUserId) ? undefined : numericUserId) as Promise<RawBooking[] | PaginatedBookingResponse>,
+        const [paginatedData, rooms] = await Promise.all([
+          bookingsApi.getFilteredPaginated({
+            userId: Number.isNaN(numericUserId) ? undefined : numericUserId,
+            pageIndex: page,
+            pageSize: size,
+          }),
           roomsApi.getAll(),
         ]);
-        console.log('Raw individual bookings fetched:', rawBookings);
-        const items = extractItems(rawBookings);
+        console.log('Paginated individual bookings fetched:', paginatedData);
+        const items = paginatedData.bookings;
         const roomMapById = new Map(rooms.map((room) => [room.id.toString(), room]));
         const roomMapByName = new Map(
           rooms.map((room) => [room.name.toLowerCase(), room])
         );
 
-        const mapped = items.map((booking) => {
-          const facilityKey = normaliseRoomKey(booking.facilityId);
+        const mapped = items.map((booking: any) => {
+          const facilityKey = booking.facilityId?.toString() || "";
           const room =
             roomMapById.get(facilityKey) ||
             (booking.facilityName
@@ -131,16 +138,16 @@ export function useMyBookings(userId: string) {
           );
 
           const normalizedDate =
-            normaliseIsoDate(booking.bookingDate || booking.date) ||
+            normaliseIsoDate(booking.date) ||
             new Date().toISOString().split("T")[0];
 
           return {
-            id: booking.bookingId ?? booking.id ?? 0,
+            id: booking.id ?? 0,
             facilityId: booking.facilityId,
             roomImageKey:
               room?.id || facilityKey || booking.facilityName || "room",
             facilityName: booking.facilityName || room?.name || "Facility",
-            campusLabel: booking.campusName || room?.campus,
+            campusLabel: booking.campus || room?.campus,
             buildingLabel: room?.building,
             date: normalizedDate,
             slotLabel: slotInfo.slotLabel,
@@ -150,9 +157,10 @@ export function useMyBookings(userId: string) {
           } satisfies UserBookingSummary;
         });
 
-        mapped.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
         setBookings(mapped);
+        setTotalRecords(paginatedData.totalRecords);
+        setCurrentPage(paginatedData.pageIndex);
+        setPageSize(paginatedData.pageSize);
         setRecurringGroups([]);
       } else {
         // Fetch recurring booking groups
@@ -169,11 +177,12 @@ export function useMyBookings(userId: string) {
     } finally {
       setLoading(false);
     }
-  }, [userId, bookingType]);
+  }, [userId, bookingType, currentPage, pageSize]);
 
   useEffect(() => {
-    loadBookings();
-  }, [loadBookings]);
+    setCurrentPage(1); // Reset to page 1 when booking type changes
+    loadBookings(1, pageSize);
+  }, [bookingType, userId]);
 
   const handleCancelBooking = async (bookingId: number) => {
     if (!bookingId) {
@@ -205,14 +214,30 @@ export function useMyBookings(userId: string) {
     }
   };
 
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    loadBookings(newPage, pageSize);
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+    loadBookings(1, newSize);
+  };
+
   return {
     bookings,
     recurringGroups,
     loading,
     bookingType,
     setBookingType,
+    currentPage,
+    pageSize,
+    totalRecords,
     handleCancelBooking,
     getStatusBadgeType,
-    refreshBookings: loadBookings,
+    refreshBookings: () => loadBookings(currentPage, pageSize),
+    handlePageChange,
+    handlePageSizeChange,
   };
 }

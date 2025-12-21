@@ -252,7 +252,7 @@ export function AdminScheduleView() {
                           <span>{booking.facilityName || booking.roomName}</span>
                         </div>
                       </td>
-                      <td className="p-3">{booking.userName}</td>
+                      <td className="p-3">{booking.bookedBy || booking.userName}</td>
                       <td className="p-3">
                         <span className={`px-2 py-1 rounded text-xs ${
                           booking.userRole === 'lecturer'

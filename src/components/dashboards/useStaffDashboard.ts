@@ -19,6 +19,9 @@ export function useStaffDashboard() {
   const [pendingBookings, setPendingBookings] = useState<Booking[]>([]);
   const [recurringGroups, setRecurringGroups] = useState<RecurringBookingSummary[]>([]);
   const [bookingHistory, setBookingHistory] = useState<Booking[]>([]);
+  const [bookingHistoryPage, setBookingHistoryPage] = useState(1);
+  const [bookingHistoryPageSize, setBookingHistoryPageSize] = useState(10);
+  const [bookingHistoryTotalRecords, setBookingHistoryTotalRecords] = useState(0);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [securityTasks, setSecurityTasks] = useState<SecurityTask[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
@@ -76,10 +79,13 @@ export function useStaffDashboard() {
     }
   };
 
-  const loadBookingHistory = async () => {
+  const loadBookingHistory = async (page: number = bookingHistoryPage, pageSize: number = bookingHistoryPageSize) => {
     setLoading(true);
-    const data = await staffApi.getBookingHistory();
-    setBookingHistory(data);
+    const data = await staffApi.getBookingHistory(page, pageSize);
+    setBookingHistory(data.bookings);
+    setBookingHistoryTotalRecords(data.totalRecords);
+    setBookingHistoryPage(data.pageIndex);
+    setBookingHistoryPageSize(data.pageSize);
     setLoading(false);
   };
 
@@ -238,6 +244,17 @@ const handleCreateSecurityTask = async (newTaskTitle: string, newTaskDescription
     } else toast.error("Failed to review report");
   };
 
+  const handleBookingHistoryPageChange = (newPage: number) => {
+    setBookingHistoryPage(newPage);
+    loadBookingHistory(newPage, bookingHistoryPageSize);
+  };
+
+  const handleBookingHistoryPageSizeChange = (newPageSize: number) => {
+    setBookingHistoryPageSize(newPageSize);
+    setBookingHistoryPage(1);
+    loadBookingHistory(1, newPageSize);
+  };
+
   // ========================= EXPORT HOOK ========================= //
   return {
     activeTab,
@@ -247,6 +264,9 @@ const handleCreateSecurityTask = async (newTaskTitle: string, newTaskDescription
     pendingBookings,
     recurringGroups,
     bookingHistory,
+    bookingHistoryPage,
+    bookingHistoryPageSize,
+    bookingHistoryTotalRecords,
     rooms,
     securityTasks,
     reports,
@@ -298,6 +318,8 @@ const handleCreateSecurityTask = async (newTaskTitle: string, newTaskDescription
     handleCancelBooking,
     handleCreateSecurityTask,
     handleReviewReport,
+    handleBookingHistoryPageChange,
+    handleBookingHistoryPageSizeChange,
     onRecurringGroupActionComplete: loadPendingBookings,
   };
 }

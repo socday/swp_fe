@@ -1,6 +1,6 @@
 import type { BookingFilterRequest } from '../api';
 import { type FrontendBooking, type FrontendReport } from '../apiAdapters';
-import { bookingsApi } from './bookingsApi';
+import { bookingsApi, type PaginatedBookings } from './bookingsApi';
 import { reportsApi } from './reportsApi';
 import { SecurityTask, securityTasksApi } from './securityTasksApi';
 
@@ -8,11 +8,13 @@ export const staffApi = {
   async getPendingBookings(): Promise<FrontendBooking[]> {
     return bookingsApi.getAll('Pending');
   },
-  async getBookingHistory(pageIndex: number): Promise<FrontendBooking[]> {
+
+  async getBookingHistory(pageIndex: number = 1, pageSize: number = 10): Promise<PaginatedBookings> {
     let filters : BookingFilterRequest = {
       pageIndex,
+      pageSize,
     }
-    return bookingsApi.getFiltered(filters);
+    return bookingsApi.getFilteredPaginated(filters);
   },
   async getSecurityTasks(): Promise<SecurityTask[]> {
     return securityTasksApi.getPendingTasks();  

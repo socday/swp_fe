@@ -38,7 +38,7 @@ export function BookingApprovals() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
             <div className="flex items-center gap-2">
               <User className="h-4 w-4" />
-              <span>{request.userName} </span>
+              <span>{request.bookedBy || request.userName} </span>
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />

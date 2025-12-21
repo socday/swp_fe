@@ -127,7 +127,7 @@ export function StaffApprovalsUI({
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4" />
                         <span>                          
-                          {booking.userName} ({booking.userRole})
+                          {booking.bookedBy} ({booking.userRole})
                         </span>
                       </div>
                       <div className="flex items-center gap-2">

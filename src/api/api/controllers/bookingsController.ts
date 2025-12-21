@@ -12,6 +12,7 @@ import type {
   StaffCancelRequest,
   BookingConflictDto,
   RecurringConflictCheckResponse,
+  PagedResult,
 } from '../types';
 
 export const bookingsController = {
@@ -59,9 +60,15 @@ export const bookingsController = {
     return data;
   },
 
-  async getBookings(filters?: BookingFilterRequest): Promise<Booking[]> {
+  async getBookings(filters?: BookingFilterRequest): Promise<Booking[] | PagedResult<Booking>> {
     const params = filters && Object.keys(filters).length ? filters : undefined;
-    const { data } = await apiClient.get<Booking[]>('/Bookings', { params });
+    const { data } = await apiClient.get<Booking[] | PagedResult<Booking>>('/Bookings', { params });
+    return data;
+  },
+
+  async getBookingsPaginated(filters?: BookingFilterRequest): Promise<PagedResult<Booking>> {
+    const params = filters && Object.keys(filters).length ? filters : undefined;
+    const { data } = await apiClient.get<PagedResult<Booking>>('/Bookings', { params });
     return data;
   },
 

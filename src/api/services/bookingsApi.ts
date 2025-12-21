@@ -12,8 +12,16 @@ import type {
   BookingStatusUpdate,
   RecurringBookingSummary,
   StaffCancelRequest,
+  PagedResult,
 } from '../api/types';
 import { safeErrorMessage } from './common';
+
+export interface PaginatedBookings {
+  bookings: FrontendBooking[];
+  totalRecords: number;
+  pageIndex: number;
+  pageSize: number;
+}
 
 export const bookingsApi = {
   async getAll(status?: string): Promise<FrontendBooking[]> {
@@ -42,6 +50,27 @@ export const bookingsApi = {
     } catch (error) {
       console.error('Error fetching filtered bookings:', error);
       return [];
+    }
+  },
+
+  async getFilteredPaginated(filters?: BookingFilterRequest): Promise<PaginatedBookings> {
+    try {
+      const data = await bookingsController.getBookingsPaginated(filters);
+      console.log('Fetched paginated bookings data:', data);
+      return {
+        bookings: adaptBookings(data.items || []),
+        totalRecords: data.totalRecords,
+        pageIndex: data.pageIndex,
+        pageSize: data.pageSize,
+      };
+    } catch (error) {
+      console.error('Error fetching paginated bookings:', error);
+      return {
+        bookings: [],
+        totalRecords: 0,
+        pageIndex: filters?.pageIndex || 1,
+        pageSize: filters?.pageSize || 10,
+      };
     }
   },
 

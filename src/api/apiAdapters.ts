@@ -49,7 +49,7 @@ export interface FrontendBooking {
   rejectionReason?: string;
   userName?: string;
   facilityName?: string;
-
+  bookedBy?: string;
   startTime?: string;     
   endTime?: string;  
 }
@@ -136,6 +136,8 @@ export function adaptBooking(
   return {
     id: backend.bookingId,
     userId: backend.userId,
+    userName: backend.userName,
+    bookedBy: backend.bookedBy,
     facilityId: backend.facilityId,
     facilityName: backend.facilityName,
     date: backend.bookingDate,

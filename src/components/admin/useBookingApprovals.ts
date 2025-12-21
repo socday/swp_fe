@@ -9,20 +9,30 @@ export function useBookingApprovals() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [recurringGroups, setRecurringGroups] = useState<RecurringBookingSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalRecords, setTotalRecords] = useState(0);
 
   useEffect(() => {
-    loadBookings();
+    setCurrentPage(1);
+    loadBookings(1, pageSize);
   }, [bookingType]);
 
-  const loadBookings = async () => {
+  const loadBookings = async (page: number = currentPage, size: number = pageSize) => {
     setLoading(true);
     try {
       if (bookingType === "individual") {
-        const data = await bookingsApi.getBookingIndividual();
-        console.log('Fetched individual bookings for approval:', data);
+        const paginatedData = await bookingsApi.getFilteredPaginated({
+          pageIndex: page,
+          pageSize: size,
+        });
+        console.log('Fetched paginated bookings for approval:', paginatedData);
         // Sort by request date (newest first)
-        const sorted = data.sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
+        const sorted = paginatedData.bookings.sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
         setBookings(sorted);
+        setTotalRecords(paginatedData.totalRecords);
+        setCurrentPage(paginatedData.pageIndex);
+        setPageSize(paginatedData.pageSize);
         setRecurringGroups([]);
       } else {
         // Fetch all recurring booking groups (no specific user filter for admin)
@@ -96,6 +106,17 @@ export function useBookingApprovals() {
     }
   };
 
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    loadBookings(newPage, pageSize);
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+    loadBookings(1, newSize);
+  };
+
   const pendingRequests = bookings.filter(r => r.status === 'Pending');
   const approvedRequests = bookings.filter(r => r.status === 'Approved');
   const rejectedRequests = bookings.filter(r => r.status === 'Rejected');
@@ -106,10 +127,15 @@ export function useBookingApprovals() {
     loading,
     bookingType,
     setBookingType,
+    currentPage,
+    pageSize,
+    totalRecords,
     pendingRequests,
     approvedRequests,
     rejectedRequests,
     handleApprove,
     handleReject,
+    handlePageChange,
+    handlePageSizeChange,
   };
 }
