@@ -4,9 +4,9 @@
  */
 
 // Get API base URL from environment or use default localhost
-export const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || 'http://localhost:5000/ap';
+export const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || 'http://localhost:5000/api';
 
-export const API_GOOGLE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GOOGLE_CLIENT_ID) || 'http://localhost:5000/api';
+export const API_GOOGLE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GOOGLE_CLIENT_ID) || '458309975048-1t73mf6o9l62a5g7655t039n08qsa2nb.apps.googleusercontent.com';
 // Optional API key if your backend requires authentication
 export const API_KEY = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_KEY) || '';
 

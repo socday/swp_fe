@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { jwtDecode } from 'jwt-decode';
 import type { User as BackendUser } from '../../api/api';
 import './login.css';
+import { API_GOOGLE } from '../../utils/config';
 
 interface DecodedToken {
   userId?: number | string;
@@ -213,7 +214,7 @@ const handleGoogleCallback = useCallback(async (accessToken: string) => {
 
   const handleGoogleLogin = () => {
     // Vite uses import.meta.env instead of process.env
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const clientId = API_GOOGLE;
     
     if (!clientId || clientId === "") {
       toast.error("Google Client ID chưa được cấu hình. Vui lòng thêm VITE_GOOGLE_CLIENT_ID vào file .env");
