@@ -146,29 +146,16 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
 
             {/* Date Selector */}
             {bookingType === "single" ? (
-              userRole !== "student" ? (
-                <div className="space-y-2">
-                  <Label>Select Date</Label>
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
-                    className="rounded-md border w-full"
-                  />
-                </div>
-              ) : (
-                date && (
-                  <div className="space-y-2">
-                    <Label>Booking Date</Label>
-                    <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
-                      <p className="text-lg font-semibold text-gray-900">
-                        {date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                      </p>
-                    </div>
-                  </div>
-                )
-              )
+              <div className="space-y-2">
+                <Label>Select Date</Label>
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+                  className="rounded-md border w-full"
+                />
+              </div>
             ) : (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
