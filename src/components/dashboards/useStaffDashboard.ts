@@ -12,6 +12,7 @@ import {
 } from "../../api/api";
 import type { RecurringBookingSummary } from '../../api/api/types';
 import { BookingForSecurityTask, SecurityStaffMember } from "../../api/services/securityTasksApi";
+import { Console } from "console";
 
 export function useStaffDashboard() {
   const [activeTab, setActiveTab] = useState("approvals");
@@ -126,7 +127,8 @@ const loadReports = async () => {
       staffApi.getReports(),
       staffApi.getBookingHistory(),
     ]);
-
+    console.log("Fetched reports data:", reportsData);
+    console.log("Fetched bookings data for reports:", bookingsData);
     const bookingMap = new Map(
       bookingsData.map((b) => [Number(b.id), b])
     );
