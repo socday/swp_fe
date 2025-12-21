@@ -17,3 +17,8 @@ export interface ReportResponse {
   createdBy: string;
   facilityName: string;
 }
+export interface ReportStatusUpdate {
+  status: string;
+  staffResponse?: string;
+}
+

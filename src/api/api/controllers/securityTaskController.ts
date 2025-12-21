@@ -7,9 +7,9 @@ import type {
 } from '../types';
 
 export const securityTaskController = {
-  async getPendingTasks(): Promise<SecurityTask[]> {
+  async getSecurityTasks(): Promise<SecurityTask[]> {
     const { data } = await apiClient.get<SecurityTask[]>(
-      '/SecurityTask/pending'
+      '/SecurityTask/all'
     );
     return data;
   },

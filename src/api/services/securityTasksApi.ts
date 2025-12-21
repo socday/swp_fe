@@ -46,7 +46,7 @@ const fetchSecurityStaff = async (): Promise<UserResponse[]> => {
 
 const fetchPendingTasks = async (): Promise<SecurityTask[]> => {
   try {
-    return await securityTaskController.getPendingTasks();
+    return await securityTaskController.getSecurityTasks();
   } catch (error) {
     console.error('Failed to load pending security tasks:', error);
     return [];
@@ -91,7 +91,7 @@ const buildTaskDescription = (booking: BookingForSecurityTask): string => {
 };
 
 export const securityTasksApi = {
-  async getPendingTasks(): Promise<SecurityTask[]> {
+  async getSecurityTasks(): Promise<SecurityTask[]> {
     return fetchPendingTasks();
   },
 
