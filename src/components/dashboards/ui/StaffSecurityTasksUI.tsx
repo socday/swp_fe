@@ -49,7 +49,12 @@ export function StaffSecurityTasksUI({
   staffMembers = [], 
   handleCreateSecurityTask,
 }: StaffSecurityTasksUIProps) {
-  
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "Pending" | "Completed">("ALL");
+  const filteredTasks =
+  statusFilter === "ALL"
+    ? securityTasks
+    : securityTasks.filter((task) => task.status === statusFilter);
+
   const [internalStaffMembers, setInternalStaffMembers] = useState<UserResponse[]>(staffMembers);
 
     const getPriorityBadge = (priority: string) => {
@@ -88,21 +93,48 @@ export function StaffSecurityTasksUI({
   return (
     <>
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Security Tasks</CardTitle>
-              <CardDescription>Manage security and maintenance tasks</CardDescription>
-            </div>
-            <Button onClick={() => setCreateTaskDialogOpen(true)} className="bg-orange-500 hover:bg-orange-600">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Task
-            </Button>
-          </div>
-        </CardHeader>
+<CardHeader>
+  <div className="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <CardTitle>Security Tasks</CardTitle>
+      <CardDescription>
+        Manage security and maintenance tasks
+      </CardDescription>
+    </div>
+
+    {/* FILTER STATUS */}
+    <div className="flex items-center gap-2">
+      <Label className="text-sm text-gray-600">Status</Label>
+      <Select
+        value={statusFilter}
+        onValueChange={(val) =>
+          setStatusFilter(val as "ALL" | "Pending" | "Completed")
+        }
+      >
+        <SelectTrigger className="w-40">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="ALL">All</SelectItem>
+          <SelectItem value="Pending">Pending</SelectItem>
+          <SelectItem value="Completed">Completed</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+
+    <Button
+      onClick={() => setCreateTaskDialogOpen(true)}
+      className="bg-orange-500 hover:bg-orange-600"
+    >
+      <Plus className="h-4 w-4 mr-2" />
+      Create Task
+    </Button>
+  </div>
+</CardHeader>
+
 
         <CardContent className="space-y-4">
-           {securityTasks.map((task) => (
+           {filteredTasks.map((task) => (
               <Card key={task.taskId} className="mb-4">
                 <CardContent className="pt-6">
                     <div className="flex justify-between">

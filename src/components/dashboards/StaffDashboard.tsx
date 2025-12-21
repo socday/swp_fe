@@ -61,7 +61,7 @@ export function StaffDashboard({ user, onLogout }: StaffDashboardProps) {
         >History</TabsTrigger>
         <TabsTrigger value="security"
         className="data-[state=active]:border-4 data-[state=active]:border-orange-500"
-        >Security</TabsTrigger>
+        >Security Tasks</TabsTrigger>
         <TabsTrigger value="reports"
         className="data-[state=active]:border-4 data-[state=active]:border-orange-500"
         >Reports</TabsTrigger>

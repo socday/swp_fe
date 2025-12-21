@@ -96,6 +96,7 @@ export function useStaffDashboard() {
     const data = await staffApi.getSecurityTasks();
     setSecurityTasks(data);
     setLoading(false);
+    console.log("Loaded security tasks:", data);
   };
 
 const loadReports = async () => {

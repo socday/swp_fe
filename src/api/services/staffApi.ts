@@ -15,7 +15,7 @@ export const staffApi = {
     return bookingsApi.getFiltered(filters);
   },
   async getSecurityTasks(): Promise<SecurityTask[]> {
-    return securityTasksApi.getPendingTasks();  
+    return securityTasksApi.getSecurityTasks();  
   },
   async getReports(): Promise<FrontendReport[]> {
     return reportsApi.getAll();
