@@ -6,10 +6,25 @@ import type {
   SecurityTask,
 } from '../types';
 
+export interface SecurityStaffDto {
+  userId: number;
+  fullName: string;
+  email: string;
+  pendingTaskCount: number;
+  isActive: boolean;
+}
+
 export const securityTaskController = {
   async getSecurityTasks(): Promise<SecurityTask[]> {
     const { data } = await apiClient.get<SecurityTask[]>(
       '/SecurityTask/all'
+    );
+    return data;
+  },
+
+  async getSecurityStaffWithTaskCounts(): Promise<SecurityStaffDto[]> {
+    const { data } = await apiClient.get<SecurityStaffDto[]>(
+      '/SecurityTask/security-staff'
     );
     return data;
   },

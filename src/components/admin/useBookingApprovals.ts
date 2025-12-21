@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { bookingsApi, Booking, securityTasksApi } from '../../api/api';
-import type { BookingForSecurityTask } from '../../api/services/securityTasksApi';
+import type { BookingForSecurityTask, SecurityStaffMember } from '../../api/services/securityTasksApi';
 import type { RecurringBookingSummary } from '../../api/api/types';
 
 export function useBookingApprovals() {
@@ -12,11 +12,25 @@ export function useBookingApprovals() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalRecords, setTotalRecords] = useState(0);
+  const [securityStaff, setSecurityStaff] = useState<SecurityStaffMember[]>([]);
+
+  useEffect(() => {
+    loadSecurityStaff();
+  }, []);
 
   useEffect(() => {
     setCurrentPage(1);
     loadBookings(1, pageSize);
   }, [bookingType]);
+
+  const loadSecurityStaff = async () => {
+    try {
+      const staff = await securityTasksApi.getSecurityStaffWithTaskCounts();
+      setSecurityStaff(staff);
+    } catch (error) {
+      console.error('Failed to load security staff:', error);
+    }
+  };
 
   const loadBookings = async (page: number = currentPage, size: number = pageSize) => {
     setLoading(true);
@@ -51,17 +65,26 @@ export function useBookingApprovals() {
   const normalizeBookingId = (bookingId: string | number): number =>
     typeof bookingId === 'string' ? parseInt(bookingId, 10) : bookingId;
 
-  const handleApprove = async (bookingId: string | number) => {
+  const handleApprove = async (bookingId: string | number, assignedToUserId?: number) => {
     const numericId = normalizeBookingId(bookingId);
     if (Number.isNaN(numericId)) {
       toast.error('Invalid booking identifier');
       return;
     }
 
-    const result = await bookingsApi.updateStatus(numericId, { status: 'Approved' });
+    if (!assignedToUserId) {
+      toast.error('Please select a security staff member');
+      return;
+    }
+
+    const result = await bookingsApi.updateStatus(numericId, { 
+      status: 'Approved',
+      assignedToUserId 
+    });
     if (result.success) {
-      toast.success(result.message || 'Booking approved. Security task created automatically.');
+      toast.success(result.message || 'Booking approved and security task assigned.');
       loadBookings(currentPage, pageSize);
+      loadSecurityStaff(); // Refresh staff counts
     } else {
       toast.error(result.error || 'Failed to approve booking');
     }
@@ -110,6 +133,7 @@ export function useBookingApprovals() {
     pendingRequests,
     approvedRequests,
     rejectedRequests,
+    securityStaff,
     handleApprove,
     handleReject,
     handlePageChange,

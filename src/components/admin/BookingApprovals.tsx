@@ -7,6 +7,7 @@ import { Calendar, Clock, User, Check, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Booking } from '../../api/api';
 import { useBookingApprovals } from './useBookingApprovals';
+import { useState } from 'react';
 
 export function BookingApprovals() {
   const {
@@ -17,81 +18,108 @@ export function BookingApprovals() {
     approvedRequests,
     rejectedRequests,
     recurringGroups,
+    securityStaff,
     handleApprove,
     handleReject,
   } = useBookingApprovals();
 
-  const RequestCard = ({ request }: { request: Booking }) => (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="space-y-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="text-lg">{request.facilityName}</h3>
-              <p className="text-sm text-gray-600">{request.building}</p>
+  const [selectedStaffPerBooking, setSelectedStaffPerBooking] = useState<Record<string | number, number>>({});
+
+  const RequestCard = ({ request }: { request: Booking }) => {
+    const selectedStaffId = selectedStaffPerBooking[request.id];
+    
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-lg">{request.facilityName}</h3>
+                <p className="text-sm text-gray-600">{request.building}</p>
+              </div>
+              <Badge variant="outline">
+                {request.campus === 'FU_FPT' ? 'FU FPT' : 'NVH'}
+              </Badge>
             </div>
-            <Badge variant="outline">
-              {request.campus === 'FU_FPT' ? 'FU FPT' : 'NVH'}
-            </Badge>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                <span>{request.bookedBy || request.userName} </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                <span>{new Date(request.date).toLocaleDateString('en-US', { 
+                  weekday: 'short', 
+                  year: 'numeric', 
+                  month: 'short', 
+                  day: 'numeric' 
+                })}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                <span>{request.startTime} - {request.endTime}</span>
+              </div>
+            </div>
+
+            <div className="text-sm">
+              <span className="text-gray-600">Purpose: </span>
+              <span>{request.purpose}</span>
+            </div>
+
+            {request.status === 'Pending' && (
+              <>
+                <div>
+                  <Label htmlFor={`security-staff-${request.id}`}>Assign Security Staff</Label>
+                  <Select 
+                    value={selectedStaffId?.toString()} 
+                    onValueChange={(value) => setSelectedStaffPerBooking({ ...selectedStaffPerBooking, [request.id]: parseInt(value) })}
+                  >
+                    <SelectTrigger id={`security-staff-${request.id}`}>
+                      <SelectValue placeholder="Select security staff..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {securityStaff.map(staff => (
+                        <SelectItem key={staff.userId} value={staff.userId.toString()}>
+                          {staff.fullName} ({staff.pendingTaskCount} tasks)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1 bg-green-500 hover:bg-green-600"
+                    onClick={() => handleApprove(request.id, selectedStaffId)}
+                    disabled={!selectedStaffId}
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Approve
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    className="flex-1"
+                    onClick={() => handleReject(request.id)}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Reject
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {request.status === 'Approved' && (
+              <Badge className="bg-green-500 w-full justify-center">Approved</Badge>
+            )}
+
+            {request.status === 'Rejected' && (
+              <Badge variant="destructive" className="w-full justify-center">Rejected</Badge>
+            )}
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              <span>{request.bookedBy || request.userName} </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              <span>{new Date(request.date).toLocaleDateString('en-US', { 
-                weekday: 'short', 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric' 
-              })}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              <span>{request.startTime} - {request.endTime}</span>
-            </div>
-          </div>
-
-          <div className="text-sm">
-            <span className="text-gray-600">Purpose: </span>
-            <span>{request.purpose}</span>
-          </div>
-
-
-          {request.status === 'Pending' && (
-            <div className="flex gap-2">
-              <Button
-                className="flex-1 bg-green-500 hover:bg-green-600"
-                onClick={() => handleApprove(request.id)}
-              >
-                <Check className="h-4 w-4 mr-2" />
-                Approve
-              </Button>
-              <Button
-                variant="destructive"
-                className="flex-1"
-                onClick={() => handleReject(request.id)}
-              >
-                <X className="h-4 w-4 mr-2" />
-                Reject
-              </Button>
-            </div>
-          )}
-
-          {request.status === 'Approved' && (
-            <Badge className="bg-green-500 w-full justify-center">Approved</Badge>
-          )}
-
-          {request.status === 'Rejected' && (
-            <Badge variant="destructive" className="w-full justify-center">Rejected</Badge>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   if (loading) {
     return (
