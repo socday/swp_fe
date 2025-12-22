@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { User } from "../../App";
 import { Header } from "../shared/Header";
 import { Footer } from "../shared/Footer";
@@ -6,6 +6,7 @@ import { Footer } from "../shared/Footer";
 import { RoomSearch } from "../booking/RoomSearch";
 import { MyBookings } from "../booking/MyBookings";
 import { ScheduleView } from "../booking/ScheduleView";
+import { NotificationsPage } from "../notifications/NotificationsPage";
 import {
   Card,
   CardHeader,
@@ -46,10 +47,21 @@ interface StudentDashboardProps {
 
 export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
 const s = useStudentDashboard(user);
+const [showNotifications, setShowNotifications] = useState(false);
+
+  if (showNotifications) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header user={user} onLogout={onLogout} onNavigateToNotifications={() => setShowNotifications(true)} />
+        <NotificationsPage onBack={() => setShowNotifications(false)} />
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header user={user} onLogout={onLogout} />
+      <Header user={user} onLogout={onLogout} onNavigateToNotifications={() => setShowNotifications(true)} />
 
       <main className="container mx-auto px-4 py-10 flex-grow">
         <div className="mb-6">

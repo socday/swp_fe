@@ -1,7 +1,9 @@
+import { useState } from "react";
 import type { User } from "../../App";
 import { Header } from "../shared/Header";
 import { Footer } from "../shared/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { NotificationsPage } from "../notifications/NotificationsPage";
 
 import { AdminScheduleView } from "../admin/AdminScheduleView";
 import { RoomSearch } from "../booking/RoomSearch";
@@ -19,10 +21,21 @@ interface StaffDashboardProps {
 
 export function StaffDashboard({ user, onLogout }: StaffDashboardProps) {
   const state = useStaffDashboard(); // toàn bộ logic được gom vào từ đây
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  if (showNotifications) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        <Header user={user} onLogout={onLogout} onNavigateToNotifications={() => setShowNotifications(true)} />
+        <NotificationsPage onBack={() => setShowNotifications(false)} />
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Header user={user} onLogout={onLogout} title="Staff Dashboard" />
+      <Header user={user} onLogout={onLogout} onNavigateToNotifications={() => setShowNotifications(true)} />
 
 <main className="w-full px-8 py-8 flex-grow">
   {/* HEADER GIỮ max width */}

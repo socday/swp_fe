@@ -3,7 +3,7 @@ import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Label } from "../ui/label";
-import { Calendar, Clock, MapPin, XCircle, Eye } from "lucide-react";
+import { Calendar, Clock, MapPin, XCircle, Eye, CalendarClock, ArrowUpDown } from "lucide-react";
 import { motion } from "motion/react";
 import { RoomImageGallery } from "../shared/RoomImageGallery";
 import { getRoomImages } from "../../api/roomImages";
@@ -24,6 +24,10 @@ export function MyBookings({ userId }: MyBookingsProps) {
     loading, 
     bookingType,
     setBookingType,
+    sortBy,
+    setSortBy,
+    showTodayOnly,
+    setShowTodayOnly,
     handleCancelBooking, 
     getStatusBadgeType,
     refreshBookings 
@@ -77,17 +81,47 @@ export function MyBookings({ userId }: MyBookingsProps) {
             <CardTitle>My Bookings</CardTitle>
             <CardDescription>View and manage your facility reservations</CardDescription>
           </div>
-          <div className="w-64">
-            <Label htmlFor="booking-type">Booking Type</Label>
-            <Select value={bookingType} onValueChange={(value: "individual" | "recurring") => setBookingType(value)}>
-              <SelectTrigger id="booking-type">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="individual">Individual Bookings</SelectItem>
-                <SelectItem value="recurring">Recurring Groups</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex gap-3">
+            {bookingType === "individual" && (
+              <>
+                <div className=" items-end">                  
+                  <Label htmlFor="show-today-only">Today</Label>
+                  <Button
+                    variant={showTodayOnly ? "default" : "outline"}
+                    onClick={() => setShowTodayOnly(!showTodayOnly)}
+                    className={showTodayOnly ? "bg-orange-500 hover:bg-orange-600" : ""}
+                  >
+                    <CalendarClock className="h-4 w-4 mr-2" />
+                    Today's Bookings
+                  </Button>
+                </div>
+                <div className="w-48">
+                  <Label htmlFor="sort-by">Sort By</Label>
+                  <Select value={sortBy} onValueChange={(value: "Newest" | "Oldest") => setSortBy(value)}>
+                    <SelectTrigger id="sort-by">
+                      <ArrowUpDown className="h-4 w-4 mr-2" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Oldest">Oldest First</SelectItem>
+                      <SelectItem value="Newest">Newest First</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+            <div className="w-56">
+              <Label htmlFor="booking-type">Booking Type</Label>
+              <Select value={bookingType} onValueChange={(value: "individual" | "recurring") => setBookingType(value)}>
+                <SelectTrigger id="booking-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="individual">Individual Bookings</SelectItem>
+                  <SelectItem value="recurring">Recurring Groups</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </CardHeader>

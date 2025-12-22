@@ -180,7 +180,7 @@ export function adaptNotification(backend: Notification): FrontendNotification {
     userId: backend.userId,
     title: backend.title,
     message: backend.message,
-    isRead: backend.isRead,
+    isRead: backend.isRead ?? false,
     type: backend.type,
     createdAt: backend.createdAt,
   };

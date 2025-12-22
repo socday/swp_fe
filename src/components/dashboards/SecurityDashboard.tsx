@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Header } from "../shared/Header";
 import { Footer } from "../shared/Footer";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { RoomImageGallery } from "../shared/RoomImageGallery";
 import { getRoomImages } from "../../api/roomImages";
+import { NotificationsPage } from "../notifications/NotificationsPage";
 
 import { useSecurityDashboard } from "./useSecurityDashboard";
 
@@ -45,16 +47,28 @@ import {
   FileText,
   CheckCircle2,
   Clock,
+  CalendarClock,
 } from "lucide-react";
 
 import { AdminScheduleView } from "../admin/AdminScheduleView";
 
 export function SecurityDashboard({ user, onLogout }) {
   const s = useSecurityDashboard(user);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  if (showNotifications) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header user={user} onLogout={onLogout} onNavigateToNotifications={() => setShowNotifications(true)} />
+        <NotificationsPage onBack={() => setShowNotifications(false)} />
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header user={user} onLogout={onLogout} title="Security Dashboard" />
+      <Header user={user} onLogout={onLogout} onNavigateToNotifications={() => setShowNotifications(true)} />
 
 <div className="w-full max-w-7xl mx-auto px-6 py-8 flex-grow">
         <h2 className="text-[30px] mb-2">Welcome, {user.name}</h2>
@@ -95,8 +109,20 @@ export function SecurityDashboard({ user, onLogout }) {
             {/* Tasks Table */}
             <Card>
               <CardHeader>
-                <CardTitle>Security Tasks</CardTitle>
-                <CardDescription>View and complete assigned tasks</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Security Tasks</CardTitle>
+                    <CardDescription>View and complete assigned tasks</CardDescription>
+                  </div>
+                  <Button
+                    variant={s.showTodayTasksOnly ? "default" : "outline"}
+                    onClick={() => s.setShowTodayTasksOnly(!s.showTodayTasksOnly)}
+                    className={s.showTodayTasksOnly ? "bg-orange-500 hover:bg-orange-600" : ""}
+                  >
+                    <CalendarClock className="h-4 w-4 mr-2" />
+                    Today's Tasks
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {s.loading ? (

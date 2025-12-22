@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Header } from "../shared/Header";
 import { Footer } from "../shared/Footer";
 import {
@@ -29,6 +30,7 @@ import {
 import { RoomSearch } from "../booking/RoomSearch";
 import { MyBookings } from "../booking/MyBookings";
 import { ScheduleView } from "../booking/ScheduleView";
+import { NotificationsPage } from "../notifications/NotificationsPage";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
@@ -42,10 +44,21 @@ interface LecturerDashboardProps {
 
 export function LecturerDashboard({ user, onLogout }: LecturerDashboardProps) {
   const s = useLecturerDashboard(user);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  if (showNotifications) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header user={user} onLogout={onLogout} onNavigateToNotifications={() => setShowNotifications(true)} />
+        <NotificationsPage onBack={() => setShowNotifications(false)} />
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header user={user} onLogout={onLogout} />
+      <Header user={user} onLogout={onLogout} onNavigateToNotifications={() => setShowNotifications(true)} />
 
       <main className="container mx-auto px-4 py-8 flex-grow">
         {/* Welcome Section */}

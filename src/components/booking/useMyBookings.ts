@@ -93,6 +93,8 @@ export function useMyBookings(userId: string) {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalRecords, setTotalRecords] = useState(0);
+  const [sortBy, setSortBy] = useState<"Newest" | "Oldest">("Oldest");
+  const [showTodayOnly, setShowTodayOnly] = useState(false);
 
   const loadBookings = useCallback(async (page: number = currentPage, size: number = pageSize) => {
     if (!userId) {
@@ -112,7 +114,8 @@ export function useMyBookings(userId: string) {
           bookingsApi.getFilteredPaginated({
             userId: Number.isNaN(numericUserId) ? undefined : numericUserId,
             pageIndex: page,
-            pageSize: size,
+            pageSize: 50, // Fetch more to filter on frontend
+            sortBy: sortBy,
           }),
           roomsApi.getAll(),
         ]);
@@ -157,8 +160,14 @@ export function useMyBookings(userId: string) {
           } satisfies UserBookingSummary;
         });
 
-        setBookings(mapped);
-        setTotalRecords(paginatedData.totalRecords);
+        // Filter for today's bookings if showTodayOnly is true
+        const today = new Date().toISOString().split('T')[0];
+        const filteredMapped = showTodayOnly 
+          ? mapped.filter(booking => booking.date === today)
+          : mapped;
+
+        setBookings(filteredMapped);
+        setTotalRecords(showTodayOnly ? filteredMapped.length : paginatedData.totalRecords);
         setCurrentPage(paginatedData.pageIndex);
         setPageSize(paginatedData.pageSize);
         setRecurringGroups([]);
@@ -177,12 +186,12 @@ export function useMyBookings(userId: string) {
     } finally {
       setLoading(false);
     }
-  }, [userId, bookingType, currentPage, pageSize]);
+  }, [userId, bookingType, currentPage, pageSize, sortBy, showTodayOnly]);
 
   useEffect(() => {
-    setCurrentPage(1); // Reset to page 1 when booking type changes
+    setCurrentPage(1); // Reset to page 1 when filters change
     loadBookings(1, pageSize);
-  }, [bookingType, userId]);
+  }, [bookingType, userId, sortBy, showTodayOnly]);
 
   const handleCancelBooking = async (bookingId: number) => {
     if (!bookingId) {
@@ -231,6 +240,10 @@ export function useMyBookings(userId: string) {
     loading,
     bookingType,
     setBookingType,
+    sortBy,
+    setSortBy,
+    showTodayOnly,
+    setShowTodayOnly,
     currentPage,
     pageSize,
     totalRecords,

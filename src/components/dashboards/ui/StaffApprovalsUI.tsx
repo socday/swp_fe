@@ -261,6 +261,13 @@ export function StaffApprovalsUI({
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
                       <div className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        <span>
+                          <span className="font-medium">Booked by:</span> {group.userName}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
                         <span>
                           {new Date(group.startDate).toLocaleDateString()} - {new Date(group.endDate).toLocaleDateString()}
@@ -272,7 +279,7 @@ export function StaffApprovalsUI({
                         <span>{group.slotName}</span>
                       </div>
 
-                      <div className="text-sm col-span-2">
+                      <div className="text-sm">
                         <span className="font-medium">Pattern: </span>
                         {group.patternName}
                       </div>
