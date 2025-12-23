@@ -22,7 +22,6 @@ export function useSecurityDashboard(user: User) {
   const [approvedBookings, setApprovedBookings] = useState<FrontendBooking[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showTodayTasksOnly, setShowTodayTasksOnly] = useState(false);
 
   // Task Completion Dialog state
   const [selectedTask, setSelectedTask] = useState<SecurityTask | null>(null);
@@ -70,7 +69,6 @@ useEffect(() => {
   setLoading(true);
   setReports(await reportsApi.getAll());
   setLoading(false);
-  console.log('Reports loaded:', reports);
   };
 
   useEffect(() => {
@@ -178,7 +176,6 @@ ${reportDescription}
     ]);
     setLoading(false);
     setSubmitReportDialogOpen(true);
-    console.log('Rooms loaded:', rooms);
   };
 
 
@@ -194,16 +191,6 @@ ${reportDescription}
   const today = new Date().toISOString().split("T")[0];
   const todayBookings = bookingsByDate[today] || [];
 
-  // Filter tasks for today if needed
-  const filteredTasks = showTodayTasksOnly
-    ? tasks.filter(task => {
-        // Filter tasks related to today's bookings
-        if (!task.bookingId) return false;
-        const taskBooking = bookingMap[task.bookingId];
-        return taskBooking && taskBooking.date === today;
-      })
-    : tasks;
-
   const upcomingDates = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + i);
@@ -212,7 +199,7 @@ ${reportDescription}
 
   return {
     // Data
-    tasks: filteredTasks,
+    tasks,
     approvedBookings,
     bookingsByDate,
     todayBookings,
@@ -220,8 +207,6 @@ ${reportDescription}
     rooms,
     loading,
     bookingMap,
-    showTodayTasksOnly,
-    setShowTodayTasksOnly,
 
     roomBookings,
     selectedTimeStart,

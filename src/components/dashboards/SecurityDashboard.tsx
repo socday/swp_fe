@@ -1,10 +1,8 @@
-import { useState } from "react";
 import { Header } from "../shared/Header";
 import { Footer } from "../shared/Footer";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { RoomImageGallery } from "../shared/RoomImageGallery";
 import { getRoomImages } from "../../api/roomImages";
-import { NotificationsPage } from "../notifications/NotificationsPage";
 
 import { useSecurityDashboard } from "./useSecurityDashboard";
 
@@ -47,30 +45,18 @@ import {
   FileText,
   CheckCircle2,
   Clock,
-  CalendarClock,
 } from "lucide-react";
 
 import { AdminScheduleView } from "../admin/AdminScheduleView";
 
 export function SecurityDashboard({ user, onLogout }) {
   const s = useSecurityDashboard(user);
-  const [showNotifications, setShowNotifications] = useState(false);
-
-  if (showNotifications) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        <Header user={user} onLogout={onLogout} onNavigateToNotifications={() => setShowNotifications(true)} />
-        <NotificationsPage onBack={() => setShowNotifications(false)} />
-        <Footer />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header user={user} onLogout={onLogout} onNavigateToNotifications={() => setShowNotifications(true)} />
+      <Header user={user} onLogout={onLogout} title="Security Dashboard" />
 
-<div className="w-full max-w-7xl mx-auto px-6 py-8 flex-grow">
+      <div className="max-w-7xl mx-auto px-4 py-8 flex-grow">
         <h2 className="text-[30px] mb-2">Welcome, {user.name}</h2>
         <p className="text-gray-600 mb-6">Manage security tasks and inspections</p>
 
@@ -109,20 +95,8 @@ export function SecurityDashboard({ user, onLogout }) {
             {/* Tasks Table */}
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Security Tasks</CardTitle>
-                    <CardDescription>View and complete assigned tasks</CardDescription>
-                  </div>
-                  <Button
-                    variant={s.showTodayTasksOnly ? "default" : "outline"}
-                    onClick={() => s.setShowTodayTasksOnly(!s.showTodayTasksOnly)}
-                    className={s.showTodayTasksOnly ? "bg-orange-500 hover:bg-orange-600" : ""}
-                  >
-                    <CalendarClock className="h-4 w-4 mr-2" />
-                    Today's Tasks
-                  </Button>
-                </div>
+                <CardTitle>Security Tasks</CardTitle>
+                <CardDescription>View and complete assigned tasks</CardDescription>
               </CardHeader>
               <CardContent>
                 {s.loading ? (
@@ -222,7 +196,7 @@ export function SecurityDashboard({ user, onLogout }) {
                         <TableHead>Type</TableHead>
                         <TableHead>Date</TableHead> 
                         <TableHead>Room</TableHead>
-                        <TableHead>Slot Booking</TableHead>
+                        <TableHead>Booking ID</TableHead>
                         <TableHead>Created By</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Created At</TableHead>
@@ -282,19 +256,14 @@ export function SecurityDashboard({ user, onLogout }) {
 
 /* --- Helper Subcomponents (UI only) --- */
 
-function StatCard({ title, value, color = "text-black" }) {
+function StatCard({ title, value, color = "black" }) {
   return (
-<Card className="h-[110px] flex flex-col justify-between">
-      <CardHeader>
-        <CardTitle className="text-sm">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className={`text-2xl font-semibold ${color}`}>{value}</div>
-      </CardContent>
+    <Card>
+      <CardHeader><CardTitle className="text-sm">{title}</CardTitle></CardHeader>
+      <CardContent><div className={`text-2xl text-${color}-600`}>{value}</div></CardContent>
     </Card>
   );
 }
-
 
 function InspectionTabUI({ s }) {
   return (

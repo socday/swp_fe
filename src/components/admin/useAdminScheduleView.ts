@@ -76,7 +76,7 @@ export function useAdminScheduleView() {
       // Fetch users once to resolve roles (for coloring)
       let usersMap: Record<number, string> = {};
       try {
-        const usersResp = await (await import('../../api/api/controllers/usersController')).default.getUsers({ pageSize: 1000 } as any);
+        const usersResp = await (await import('../../api/api/controllers/usersController')).default.getUsers({ pageSize: 1001 } as any);
         const userItems = (usersResp && (usersResp as any).items) || [];
         usersMap = userItems.reduce((acc: Record<number, string>, u: any) => {
           if (u.userId) acc[u.userId] = (u.roleName || '').toLowerCase();
