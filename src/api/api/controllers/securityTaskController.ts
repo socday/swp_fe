@@ -3,6 +3,7 @@ import type {
   ApiMessageResponse,
   CompleteTaskRequest,
   CreateTaskRequest,
+  SecurityStaffDto,
   SecurityTask,
 } from '../types';
 
@@ -36,7 +37,16 @@ export const securityTaskController = {
       '/SecurityTask/pending'
     );
     return data;
+  },
+
+   async getSecurityStaffWithTaskCounts(): Promise<SecurityStaffDto[]> {
+    const { data } = await apiClient.get<SecurityStaffDto[]>(
+      '/SecurityTask/security-staff'
+    );
+    return data;
   }
+
 };
+
 
 export default securityTaskController;

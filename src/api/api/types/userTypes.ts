@@ -61,3 +61,11 @@ export interface UserResponse {
   roleName: string;
   isActive: boolean;
 }
+
+export interface SecurityStaffDto {
+  userId: number;
+  fullName: string;
+  email: string;
+  pendingTaskCount: number;
+  isActive: boolean;
+}
