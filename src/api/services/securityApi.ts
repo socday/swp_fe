@@ -16,7 +16,6 @@ async getApprovedBookings(): Promise<FrontendBooking[]> {
   return bookings.filter(b => b.status === "Approved");
 },
 
-
   async completeTask(
     taskId: number,
     reportNote?: string
@@ -24,8 +23,7 @@ async getApprovedBookings(): Promise<FrontendBooking[]> {
     try {
       await securityTaskController.completeTask(taskId, {
         reportNote,
-      }
-    );
+      });
       return true;
     } catch (error) {
       console.error('Complete task failed:', error);

@@ -86,10 +86,9 @@ export function SecurityDashboard({ user, onLogout }) {
           {/* TAB: My Tasks */}
           <TabsContent value="tasks" className="space-y-4">
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <StatCard title="Total Tasks" value={s.tasks.length} />
               <StatCard title="Pending" value={s.tasks.filter(t => t.status === "Pending").length} />
-              <StatCard title="Completed" value={s.tasks.filter(t => t.status === "Completed").length} color="green" />
             </div>
 
             {/* Tasks Table */}
@@ -98,7 +97,7 @@ export function SecurityDashboard({ user, onLogout }) {
                 <CardTitle>Security Tasks</CardTitle>
                 <CardDescription>View and complete assigned tasks</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent> 
                 {s.loading ? (
                   <div className="text-center py-8">Loading...</div>
                 ) : s.tasks.length === 0 ? (
@@ -110,6 +109,7 @@ export function SecurityDashboard({ user, onLogout }) {
                           <TableHead>Title</TableHead>
                           <TableHead className="text-center">Priority</TableHead>
                           <TableHead>Created At</TableHead>
+                          <TableHead className="text-center">Task Type</TableHead>
                           <TableHead className="text-center">Status</TableHead>
                           <TableHead className="text-center">Action</TableHead>
                         </TableRow>
@@ -131,6 +131,10 @@ export function SecurityDashboard({ user, onLogout }) {
                             </TableCell>
 
                             <TableCell className="text-center">
+                              {task.taskType ?? "—"}
+                            </TableCell>
+
+                            <TableCell className="text-center">
                               <Badge
                                 className={
                                   task.status === "Pending"
@@ -147,8 +151,7 @@ export function SecurityDashboard({ user, onLogout }) {
                                 <Button
                                   size="sm"
                                   onClick={() => {
-                                    s.setSelectedTask(task);
-                                    s.setCompleteTaskDialogOpen(true);
+                                  s.openCompleteTaskDialog(task);
                                   }}
                                 >
                                   Complete
@@ -482,7 +485,6 @@ function CompleteTaskDialog({ s }) {
               </p>
             </div>
             </div>
-
             <div className="space-y-2">
               <Label>Completion Notes</Label>
               <Textarea

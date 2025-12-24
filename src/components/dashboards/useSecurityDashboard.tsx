@@ -27,6 +27,7 @@ export function useSecurityDashboard(user: User) {
   const [selectedTask, setSelectedTask] = useState<SecurityTask | null>(null);
   const [completeTaskDialogOpen, setCompleteTaskDialogOpen] = useState(false);
   const [completionNotes, setCompletionNotes] = useState("");
+  const [checkInStatus, setCheckInStatus] = useState<string | null>(null);
 
   // Report Submit Dialog state
   const [selectedTimeStart, setSelectedTimeStart] = useState<string>("");
@@ -38,6 +39,7 @@ export function useSecurityDashboard(user: User) {
   const [reportDescription, setReportDescription] = useState("");
   const [reports, setReports] = useState<FrontendReport[]>([]);
  
+  
 const roomIdToNameMap = rooms.reduce((acc, room) => {
   acc[room.id] = room.name;
   return acc;
@@ -59,6 +61,12 @@ const bookingMap = useMemo(() => {
   });
   return map;
 }, [approvedBookings]);
+
+const openCompleteTaskDialog = (task: SecurityTask) => {
+  setSelectedTask(task);
+  setCheckInStatus(task.taskType ?? null);
+  setCompleteTaskDialogOpen(true);
+};
 
 
 useEffect(() => {
@@ -84,6 +92,7 @@ useEffect(() => {
     setLoading(true);
     setTasks(await securityApi.getTasks());
     setLoading(false);
+    console.log('Loaded tasks:', tasks);
   };
 
   const loadApprovedBookings = async () => {
@@ -102,18 +111,19 @@ useEffect(() => {
 
   const handleCompleteTask = async () => {
     if (!selectedTask) return;
+
     const success = await securityApi.completeTask(
-      selectedTask.taskId, 
-      completionNotes
+      selectedTask.taskId,
+      completionNotes,
     );
 
-
     if (success) {
-      toast.success("Task marked as completed");
-      setCompleteTaskDialogOpen(false);
-      setSelectedTask(null);
-      setCompletionNotes("");
-      loadTasks();
+    toast.success("Task updated");
+    setCompleteTaskDialogOpen(false);
+    setSelectedTask(null);
+    setCompletionNotes("");
+    setCheckInStatus(null);
+    loadTasks();
     } else {
       toast.error("Failed to complete task");
     }
@@ -216,7 +226,8 @@ ${reportDescription}
     // UI States
     activeTab,
     setActiveTab,
-
+    checkInStatus,
+    setCheckInStatus,
     selectedTask,
     setSelectedTask,
 
@@ -242,7 +253,7 @@ ${reportDescription}
     setReportDescription,
 
     reports,
-
+    openCompleteTaskDialog,
     // Functions
     loadTasks,
     loadRooms,
