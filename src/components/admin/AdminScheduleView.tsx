@@ -76,8 +76,8 @@ export function AdminScheduleView() {
               </Button>
             </motion.div>
             <h3 className="text-center">
-              {weekDates[0].toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} -{' '}
-              {weekDates[6].toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              {weekDates[0] ? weekDates[0].toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : ''} -{' '}
+              {weekDates[6] ? weekDates[6].toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ''}
             </h3>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button variant="outline" size="sm" onClick={goToNextWeek}>
@@ -129,8 +129,9 @@ export function AdminScheduleView() {
 
                   {/* Days */}
                   {weekDates.map((date, dayIndex) => {
-                    const bookingsForSlot = getBookingsForDateAndSlot(date, slot.id);
-                    const isToday = formatDateKey(new Date()) === formatDateKey(date);
+                    const safeDate = date ?? new Date();
+                    const bookingsForSlot = getBookingsForDateAndSlot(safeDate, slot.id);
+                    const isToday = formatDateKey(new Date()) === formatDateKey(safeDate);
 
                     // If there are bookings for this slot, show a full-width pill with the room name.
                     // Priority: if any lecturer booking exists, display that (lecturer color), otherwise display a student booking.
@@ -138,6 +139,7 @@ export function AdminScheduleView() {
                     const displayBooking = lecturerBooking || bookingsForSlot[0];
                     const isLecturer = displayBooking?.userRole === 'lecturer';
 
+                    const dateKey = (formatDateKey(safeDate) || '') as string;
                     return (
                       <div
                         key={dayIndex}
@@ -146,7 +148,7 @@ export function AdminScheduleView() {
                         }`}
                         onClick={() => {
                           if (bookingsForSlot.length > 0) {
-                            handleBookingClick(bookingsForSlot, slot.label, formatDateKey(date));
+                            handleBookingClick(bookingsForSlot, slot.label, dateKey);
                           }
                         }}
                       >
@@ -252,7 +254,7 @@ export function AdminScheduleView() {
                           <span>{booking.facilityName || booking.roomName}</span>
                         </div>
                       </td>
-                      <td className="p-3">{booking.userName}</td>
+                      <td className="p-3">{booking.bookedBy || booking.userName}</td>
                       <td className="p-3">
                         <span className={`px-2 py-1 rounded text-xs ${
                           booking.userRole === 'lecturer'
