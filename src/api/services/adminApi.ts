@@ -73,13 +73,14 @@ export const adminApi = {
         facilitiesController.getFacilities(),
         slotsController.getSlots(),
       ]);
+      console.log('Fetched booking data for analytics:', bookingData);
 
       const facilities = adaptFacilities(facilitiesData || []);
       const slots = adaptSlots(slotsData || []);
       const bookings = Array.isArray((bookingData as any)?.items)
         ? adaptBookings((bookingData as any).items || [])
         : adaptBookings((bookingData as Booking[]) || []);
-
+        console.log('Fetched bookings for analytics:', bookings);
       const campusFilterId =
         _campus === 'NVH' ? 2 : _campus === 'FU_FPT' ? 1 : undefined;
 

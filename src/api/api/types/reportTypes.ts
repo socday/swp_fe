@@ -1,15 +1,4 @@
 
-export interface SecurityUIReport {
-  roomId: string;
-  roomName: string;
-  reporterRole: string;
-  reporterName: string;
-  reporterId: number;
-  type: string;        
-  severity: string;
-  description: string;
-}
-
 export interface ReportCreateRequest {
   facilityId: number;
   title: string;
@@ -17,3 +6,19 @@ export interface ReportCreateRequest {
   reportType: string; 
   bookingId?: number;
 }
+
+export interface ReportResponse {
+  reportId: number;
+  title: string;
+  description: string;
+  reportType: string;  
+  status: string;      
+  createdAt: string;
+  createdBy: string;
+  facilityName: string;
+}
+export interface ReportStatusUpdate {
+  status: string;
+  staffResponse?: string;
+}
+

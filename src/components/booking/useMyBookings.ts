@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { bookingsApi, roomsApi } from "../../api/api";
 import { getSlotById, getSlotByTime, TimeSlot } from "../../api/timeSlots";
+import type { RecurringBookingSummary } from "../../api/api/types";
 
 export interface UserBookingSummary {
   id: number;
@@ -10,7 +11,7 @@ export interface UserBookingSummary {
   facilityName: string;
   campusLabel?: string;
   buildingLabel?: string;
-  date: string;
+  date?: string;
   slotLabel: string;
   slotDisplayTime: string;
   status: string;
@@ -85,12 +86,20 @@ const extractItems = (payload: RawBooking[] | PaginatedBookingResponse): RawBook
 };
 
 export function useMyBookings(userId: string) {
+  const [bookingType, setBookingType] = useState<"individual" | "recurring">("individual");
   const [bookings, setBookings] = useState<UserBookingSummary[]>([]);
+  const [recurringGroups, setRecurringGroups] = useState<RecurringBookingSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [sortBy, setSortBy] = useState<"Newest" | "Oldest">("Oldest");
+  const [showTodayOnly, setShowTodayOnly] = useState(false);
 
-  const loadBookings = useCallback(async () => {
+  const loadBookings = useCallback(async (page: number = currentPage, size: number = pageSize) => {
     if (!userId) {
       setBookings([]);
+      setRecurringGroups([]);
       setLoading(false);
       return;
     }
@@ -99,68 +108,90 @@ export function useMyBookings(userId: string) {
 
     try {
       const numericUserId = Number(userId);
-      const [rawBookings, rooms] = await Promise.all([
-        bookingsApi.getFiltered({
-          userId: Number.isNaN(numericUserId) ? undefined : numericUserId,
-        }) as Promise<RawBooking[] | PaginatedBookingResponse>,
-        roomsApi.getAll(),
-      ]);
-      console.log('Raw bookings fetched:', rawBookings);
-      const items = extractItems(rawBookings);
-      const roomMapById = new Map(rooms.map((room) => [room.id.toString(), room]));
-      const roomMapByName = new Map(
-        rooms.map((room) => [room.name.toLowerCase(), room])
-      );
-
-      const mapped = items.map((booking) => {
-        const facilityKey = normaliseRoomKey(booking.facilityId);
-        const room =
-          roomMapById.get(facilityKey) ||
-          (booking.facilityName
-            ? roomMapByName.get(booking.facilityName.toLowerCase())
-            : undefined);
-        const slotInfo = mapSlot(
-          booking.slotId,
-          booking.slotName,
-          booking.startTime,
-          booking.endTime
+      
+      if (bookingType === "individual") {
+        const [paginatedData, rooms] = await Promise.all([
+          bookingsApi.getFilteredPaginated({
+            userId: Number.isNaN(numericUserId) ? undefined : numericUserId,
+            pageIndex: page,
+            pageSize: 50, // Fetch more to filter on frontend
+            sortBy: sortBy,
+          }),
+          roomsApi.getAll(),
+        ]);
+        console.log('Paginated individual bookings fetched:', paginatedData);
+        const items = paginatedData.bookings;
+        const roomMapById = new Map(rooms.map((room) => [room.id.toString(), room]));
+        const roomMapByName = new Map(
+          rooms.map((room) => [room.name.toLowerCase(), room])
         );
 
-        const normalizedDate =
-          normaliseIsoDate(booking.bookingDate || booking.date) ||
-          new Date().toISOString().split("T")[0];
+        const mapped = items.map((booking: any) => {
+          const facilityKey = booking.facilityId?.toString() || "";
+          const room =
+            roomMapById.get(facilityKey) ||
+            (booking.facilityName
+              ? roomMapByName.get(booking.facilityName.toLowerCase())
+              : undefined);
+          const slotInfo = mapSlot(
+            booking.slotId,
+            booking.slotName,
+            booking.startTime,
+            booking.endTime
+          );
 
-        return {
-          id: booking.bookingId ?? booking.id ?? 0,
-          facilityId: booking.facilityId,
-          roomImageKey:
-            room?.id || facilityKey || booking.facilityName || "room",
-          facilityName: booking.facilityName || room?.name || "Facility",
-          campusLabel: booking.campusName || room?.campus,
-          buildingLabel: room?.building,
-          date: normalizedDate,
-          slotLabel: slotInfo.slotLabel,
-          slotDisplayTime: slotInfo.slotDisplayTime,
-          status: booking.status || "Pending",
-          purpose: booking.purpose,
-        } satisfies UserBookingSummary;
-      });
+          const normalizedDate =
+            normaliseIsoDate(booking.date) ||
+            new Date().toISOString().split("T")[0];
 
-      mapped.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          return {
+            id: booking.id ?? 0,
+            facilityId: booking.facilityId,
+            roomImageKey:
+              room?.id || facilityKey || booking.facilityName || "room",
+            facilityName: booking.facilityName || room?.name || "Facility",
+            campusLabel: booking.campus || room?.campus,
+            buildingLabel: room?.building,
+            date: normalizedDate,
+            slotLabel: slotInfo.slotLabel,
+            slotDisplayTime: slotInfo.slotDisplayTime,
+            status: booking.status || "Pending",
+            purpose: booking.purpose,
+          } satisfies UserBookingSummary;
+        });
 
-      setBookings(mapped);
+        // Filter for today's bookings if showTodayOnly is true
+        const today = new Date().toISOString().split('T')[0];
+        const filteredMapped = showTodayOnly 
+          ? mapped.filter(booking => booking.date === today)
+          : mapped;
+
+        setBookings(filteredMapped);
+        setTotalRecords(showTodayOnly ? filteredMapped.length : paginatedData.totalRecords);
+        setCurrentPage(paginatedData.pageIndex);
+        setPageSize(paginatedData.pageSize);
+        setRecurringGroups([]);
+      } else {
+        // Fetch recurring booking groups
+        const groups = await bookingsApi.getBookingRecurrenceGroup(Number.isNaN(numericUserId) ? undefined : numericUserId);
+        console.log('Fetched recurring groups:', groups);
+        setRecurringGroups(groups);
+        setBookings([]);
+      }
     } catch (error) {
       console.error("Failed to load bookings", error);
       toast.error("Unable to load bookings. Please try again later.");
       setBookings([]);
+      setRecurringGroups([]);
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, bookingType, currentPage, pageSize, sortBy, showTodayOnly]);
 
   useEffect(() => {
-    loadBookings();
-  }, [loadBookings]);
+    setCurrentPage(1); // Reset to page 1 when filters change
+    loadBookings(1, pageSize);
+  }, [bookingType, userId, sortBy, showTodayOnly]);
 
   const handleCancelBooking = async (bookingId: number) => {
     if (!bookingId) {
@@ -192,10 +223,34 @@ export function useMyBookings(userId: string) {
     }
   };
 
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    loadBookings(newPage, pageSize);
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+    loadBookings(1, newSize);
+  };
+
   return {
     bookings,
+    recurringGroups,
     loading,
+    bookingType,
+    setBookingType,
+    sortBy,
+    setSortBy,
+    showTodayOnly,
+    setShowTodayOnly,
+    currentPage,
+    pageSize,
+    totalRecords,
     handleCancelBooking,
     getStatusBadgeType,
+    refreshBookings: () => loadBookings(currentPage, pageSize),
+    handlePageChange,
+    handlePageSizeChange,
   };
 }

@@ -4,10 +4,11 @@ export interface SecurityTask {
   title: string;
   description?: string;
 
-  status: string;        // "Pending" | "Completed"
-  priority: string;      // "High" | "Normal" | "Low"
+  status: string;      
+  priority: string;
 
   assignedToUserId?: number;
+  assignedToUserName?: string;
   createdBy?: number;
 
   reportNote?: string;

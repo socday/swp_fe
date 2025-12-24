@@ -1,11 +1,12 @@
-import React from 'react';
-import { User } from "../../App";
+import React, { useState } from 'react';
+import type { User } from "../../App";
 import { Header } from "../shared/Header";
 import { Footer } from "../shared/Footer";
 
 import { RoomSearch } from "../booking/RoomSearch";
 import { MyBookings } from "../booking/MyBookings";
 import { ScheduleView } from "../booking/ScheduleView";
+import { NotificationsPage } from "../notifications/NotificationsPage";
 import {
   Card,
   CardHeader,
@@ -45,13 +46,24 @@ interface StudentDashboardProps {
 }
 
 export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
-const s = useStudentDashboard();
+const s = useStudentDashboard(user);
+const [showNotifications, setShowNotifications] = useState(false);
+
+  if (showNotifications) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header user={user} onLogout={onLogout} onNavigateToNotifications={() => setShowNotifications(true)} />
+        <NotificationsPage onBack={() => setShowNotifications(false)} />
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header user={user} onLogout={onLogout} />
+      <Header user={user} onLogout={onLogout} onNavigateToNotifications={() => setShowNotifications(true)} />
 
-      <main className="container mx-auto px-4 py-8 flex-grow">
+      <main className="container mx-auto px-4 py-10 flex-grow">
         <div className="mb-6">
           <h1 className="text-3xl mb-2">Welcome, {user.name}</h1>
           <p className="text-gray-600">
@@ -59,8 +71,9 @@ const s = useStudentDashboard();
           </p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 max-w-md">
+        <Tabs value={s.activeTab} onValueChange={s.setActiveTab}>
+          <TabsList className="flex w-full gap-2">
+
             <TabsTrigger
               value="search"
               className="data-[state=active]:border-2 data-[state=active]:border-orange-500"
@@ -99,24 +112,29 @@ const s = useStudentDashboard();
                 </CardHeader>
 
                 <CardContent className="space-y-4">
-                  <Select value={s.reportType} onValueChange={s.setReportType}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Hỏng thiết bị">Equipment Issue</SelectItem>
-                      <SelectItem value="Vấn đề đặt phòng">Booking Issue</SelectItem>
-                      <SelectItem value="Khác">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <Select
+                      value={s.selectedBookingId?.toString() ?? ""}
+                      onValueChange={(v) => s.setSelectedBookingId(Number(v))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a booking" />
+                      </SelectTrigger>
 
+                      <SelectContent>
+                        {s.approvedBookings.map(b => (
+                          <SelectItem key={b.id} value={b.id.toString()}>
+                            {b.facilityName} · {b.date} · {b.startTime} - {b.endTime}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   <Textarea
                     placeholder="Describe the issue..."
                     value={s.reportDescription}
                     onChange={(e) => s.setReportDescription(e.target.value)}
                   />
 
-                  <Button onClick={() => s.handleCreateReport(1)}>
+                  <Button onClick={() => s.handleCreateReport()}>
                     Submit Report
                   </Button>
                 </CardContent>
@@ -139,25 +157,49 @@ const s = useStudentDashboard();
                         <TableHeader>
                           <TableRow>
                             <TableHead>Title</TableHead>
-                            <TableHead>Type</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Report Type</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Created At</TableHead>
                           </TableRow>
                         </TableHeader>
-                        <TableBody>
+
+                       <TableBody>
                           {s.reports.map((r) => (
                             <TableRow key={r.reportId}>
-                              <TableCell>{r.title}</TableCell>
-                              <TableCell>{r.reportType}</TableCell>
-                              <TableCell>
-                                <Badge>{r.status}</Badge>
+                              <TableCell className="font-medium">
+                                {r.title}
                               </TableCell>
+
+                              <TableCell className="max-w-xs truncate">
+                                {r.description}
+                              </TableCell>
+
+                              <TableCell>
+                                <Badge variant="outline">
+                                  {r.reportType}
+                                </Badge>
+                              </TableCell>
+
+                              <TableCell>
+                                <Badge
+                                  className={
+                                    r.status === "Resolved"
+                                      ? "bg-green-50 text-green-700"
+                                      : "bg-yellow-50 text-yellow-700"
+                                  }
+                                >
+                                  {r.status}
+                                </Badge>
+                              </TableCell>
+
                               <TableCell>
                                 {new Date(r.createdAt).toLocaleString()}
                               </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
+
                       </Table>
                     )}
                   </CardContent>
@@ -167,8 +209,12 @@ const s = useStudentDashboard();
             <RoomSearch userRole="student" />
           </TabsContent>
 
+          <TabsContent value="bookings" className="mt-6">
+            <MyBookings userId={user.id} />
+          </TabsContent>
+
           <TabsContent value="schedule" className="mt-6">
-            <ScheduleView userId={String(user.id)} />
+            <ScheduleView userId={user.id} />
           </TabsContent>
         </Tabs>
       </main>

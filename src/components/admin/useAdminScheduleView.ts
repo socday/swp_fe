@@ -50,6 +50,7 @@ export function useAdminScheduleView() {
   const loadBookings = async () => {
     setLoading(true);
     try {
+
       const week = getWeekDates();
       const fromDate = formatDateKey(week[0]);
       const toDate = formatDateKey(week[6]);

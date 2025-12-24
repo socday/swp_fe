@@ -9,6 +9,7 @@ import { AdminScheduleView } from '../admin/AdminScheduleView';
 import { UserManagement } from '../admin/UserManagement';
 import { AdvancedStatistics } from '../admin/AdvancedStatistics';
 import { AdminReports } from '../admin/AdminReports';
+import { NotificationsPage } from '../notifications/NotificationsPage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Users, BarChart3, ClipboardList, Calendar, Building2, FileText } from 'lucide-react';
 
@@ -19,10 +20,21 @@ interface AdminDashboardProps {
 
 export function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState('approvals');
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  if (showNotifications) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header user={user} onLogout={onLogout} onNavigateToNotifications={() => setShowNotifications(true)} />
+        <NotificationsPage onBack={() => setShowNotifications(false)} />
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header user={user} onLogout={onLogout} />
+      <Header user={user} onLogout={onLogout} onNavigateToNotifications={() => setShowNotifications(true)} />
       
       <main className="container mx-auto px-4 py-8 flex-grow">
         <div className="mb-6">

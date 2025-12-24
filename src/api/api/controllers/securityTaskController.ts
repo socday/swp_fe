@@ -7,9 +7,9 @@ import type {
 } from '../types';
 
 export const securityTaskController = {
-  async getPendingTasks(): Promise<SecurityTask[]> {
+  async getSecurityTasks(): Promise<SecurityTask[]> {
     const { data } = await apiClient.get<SecurityTask[]>(
-      '/SecurityTask/pending'
+      '/SecurityTask/all'
     );
     return data;
   },
@@ -31,6 +31,13 @@ export const securityTaskController = {
     const { data } = await apiClient.post<ApiMessageResponse>('/SecurityTask/assign', payload);
     return data;
   },
+  
+  async getPendingTasks(): Promise<SecurityTask[]> {
+    const { data } = await apiClient.get<SecurityTask[]>(
+      '/SecurityTask/pending'
+    );
+    return data;
+  }
 };
 
 export default securityTaskController;

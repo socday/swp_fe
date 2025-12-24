@@ -1,5 +1,6 @@
+import type { BookingFilterRequest } from '../api';
 import { type FrontendBooking, type FrontendReport } from '../apiAdapters';
-import { bookingsApi } from './bookingsApi';
+import { bookingsApi, type PaginatedBookings } from './bookingsApi';
 import { reportsApi } from './reportsApi';
 import { SecurityTask, securityTasksApi } from './securityTasksApi';
 
@@ -7,11 +8,16 @@ export const staffApi = {
   async getPendingBookings(): Promise<FrontendBooking[]> {
     return bookingsApi.getAll('Pending');
   },
-  async getBookingHistory(): Promise<FrontendBooking[]> {
-    return bookingsApi.getAll();
+
+  async getBookingHistory(pageIndex: number = 1, pageSize: number = 10): Promise<PaginatedBookings> {
+    let filters : BookingFilterRequest = {
+      pageIndex,
+      pageSize,
+    }
+    return bookingsApi.getFilteredPaginated(filters);
   },
   async getSecurityTasks(): Promise<SecurityTask[]> {
-    return securityTasksApi.getPendingTasks();  
+    return securityTasksApi.getSecurityTasks();  
   },
   async getReports(): Promise<FrontendReport[]> {
     return reportsApi.getAll();
@@ -28,12 +34,34 @@ export const staffApi = {
     });
     return result.success;
   },
-  async updateReportStatus(reportId: string, status: string, notes?: string): Promise<boolean> {
-    if (status === 'Resolved') {
-      const numericId = parseInt(reportId, 10);
-      return reportsApi.resolve(numericId, notes || '');
+ async updateReportStatus(
+  reportId: number | string,
+  status: string,
+  notes?: string
+): Promise<boolean> {
+  try {
+    const numericId = typeof reportId === 'string'
+      ? parseInt(reportId, 10)
+      : reportId;
+
+    if (Number.isNaN(numericId)) {
+      console.error("Invalid reportId:", reportId);
+      return false;
     }
-    console.warn('staffApi.updateReportStatus() partially implemented');
+
+    console.log("Updating report:", {
+      reportId: numericId,
+      status,
+      notes,
+    });
+
+    return await reportsApi.updateStatus(numericId, {
+      status,
+      staffResponse: notes,
+    });
+  } catch (error) {
+    console.error("updateReportStatus error:", error);
     return false;
-  },
+  }
+}
 };

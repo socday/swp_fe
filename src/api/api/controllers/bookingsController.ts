@@ -5,14 +5,19 @@ import type {
   BookingAvailabilityResponse,
   BookingCreateRequest,
   BookingFilterRequest,
+  BookingIndividualSummary,
   BookingRecurringRequest,
   BookingStatusUpdate,
+  RecurringBookingSummary,
   StaffCancelRequest,
+  BookingConflictDto,
+  RecurringConflictCheckResponse,
+  PagedResult,
 } from '../types';
 
 export const bookingsController = {
   async createBooking(payload: BookingCreateRequest): Promise<ApiMessageResponse> {
-    const { data } = await apiClient.post<ApiMessageResponse>('/Bookings', payload);
+    const { data } = await apiClient.post<ApiMessageResponse>('/Bookings', payload, {});
     return data;
   },
 
@@ -55,9 +60,44 @@ export const bookingsController = {
     return data;
   },
 
-  async getBookings(filters?: BookingFilterRequest): Promise<Booking[]> {
+  async getBookings(filters?: BookingFilterRequest): Promise<Booking[] | PagedResult<Booking>> {
     const params = filters && Object.keys(filters).length ? filters : undefined;
-    const { data } = await apiClient.get<Booking[]>('/Bookings', { params });
+    const { data } = await apiClient.get<Booking[] | PagedResult<Booking>>('/Bookings', { params });
+    return data;
+  },
+
+  async getBookingsPaginated(filters?: BookingFilterRequest): Promise<PagedResult<Booking>> {
+    const params = filters && Object.keys(filters).length ? filters : undefined;
+    const { data } = await apiClient.get<PagedResult<Booking>>('/Bookings', { params });
+    return data;
+  },
+
+  async getBookingRecurrenceGroup (id?: number): Promise<RecurringBookingSummary[]>{
+    const params = id ? { id } : undefined;
+    const { data } = await apiClient.get<RecurringBookingSummary[]>('/Bookings/recurring-groups', { params });
+    return data;
+  },
+
+  async getBookingListOfRecurrenceGroup (id?: string): Promise<Booking[]>{
+    const params = id ? { id } : undefined;
+    const { data } = await apiClient.get<Booking[]>(`/Bookings/recurring-group/${id}`);
+    return data;
+  },
+
+  async getBookingIndividual (id?: number, status?: string): Promise<Booking[]>{
+    const params = id || status ? { ...(id && { id }), ...(status && { status }) } : undefined;
+    const { data } = await apiClient.get<Booking[]>('/Bookings/individual', { params });
+    console.log('Fetched individual bookings data controller:', data);
+    return data;
+  },
+
+  async checkBookingConflict(payload: BookingCreateRequest): Promise<{ hasConflict: boolean; conflict?: BookingConflictDto; message?: string }> {
+    const { data } = await apiClient.post<{ hasConflict: boolean; conflict?: BookingConflictDto; message?: string }>('/Bookings/check-conflict', payload);
+    return data;
+  },
+
+  async checkRecurringConflicts(payload: BookingRecurringRequest): Promise<RecurringConflictCheckResponse> {
+    const { data } = await apiClient.post<RecurringConflictCheckResponse>('/Bookings/check-recurring-conflicts', payload);
     return data;
   },
 };

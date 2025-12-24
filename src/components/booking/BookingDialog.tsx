@@ -4,7 +4,7 @@ import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Calendar } from "../ui/calendar";
 import { motion } from "motion/react";
-import { Clock, CheckCircle2, X, CalendarDays } from "lucide-react";
+import { Clock, CheckCircle2, X, CalendarDays, Loader2 } from "lucide-react";
 import { RoomImageGallery } from "../shared/RoomImageGallery";
 import { getRoomImages } from "../../api/roomImages";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
@@ -53,6 +53,10 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
     availableSlots,
     allSlots,
     convertToVietnameseDay,
+    conflictCheckResult,
+    checkingConflicts,
+    conflictChecked,
+    handleCheckConflicts,
   } = useBookingDialog(room, initialDate, onSuccess, onClose, userRole);
 
   const roomImages = getRoomImages(room.id);
@@ -68,13 +72,14 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
       4: "Weekends",
       5: "Monthly",
       6: "Custom",
+      7: "Semester",
     };
     return labels[pattern];
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[70vw] w-[70vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Book {room.name}</DialogTitle>
           <DialogDescription>
@@ -141,29 +146,16 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
 
             {/* Date Selector */}
             {bookingType === "single" ? (
-              userRole !== "student" ? (
-                <div className="space-y-2">
-                  <Label>Select Date</Label>
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
-                    className="rounded-md border w-full"
-                  />
-                </div>
-              ) : (
-                date && (
-                  <div className="space-y-2">
-                    <Label>Booking Date</Label>
-                    <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
-                      <p className="text-lg font-semibold text-gray-900">
-                        {date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                      </p>
-                    </div>
-                  </div>
-                )
-              )
+              <div className="space-y-2">
+                <Label>Select Date</Label>
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+                  className="rounded-md border w-full"
+                />
+              </div>
             ) : (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -212,6 +204,7 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
                     <SelectItem value="4">Weekends - Saturday and Sunday only</SelectItem>
                     <SelectItem value="5">Monthly - Same date each month</SelectItem>
                     <SelectItem value="6">Custom - Choose specific days</SelectItem>
+                    <SelectItem value="7">Semester - Every semester</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -311,11 +304,13 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
               </div>
             )}
 
+
+
             {/* Time Slots */}
             <div className="space-y-3">
               <Label className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
-                Select Time Slots das (Multiple Selection)
+                Select Time Slots (Multiple Selection)
               </Label>
 
               {allSlots.length > 0 ? (
@@ -419,19 +414,145 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
             </div>
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
+                      {/* Conflict Check Result - Only for Recurring */}
+            {bookingType === "recurring" && conflictCheckResult && (
+              <div className="border-t pt-4">
+                <div className={`rounded-lg p-4 ${
+                  conflictCheckResult.blockedCount > 0 && !skipConflicts
+                    ? 'bg-red-50 border-2 border-red-300'
+                    : conflictCheckResult.conflictCount > 0
+                    ? 'bg-yellow-50 border-2 border-yellow-300'
+                    : 'bg-green-50 border-2 border-green-300'
+                }`}>
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <h3 className={`font-semibold text-lg ${
+                        conflictCheckResult.blockedCount > 0 && !skipConflicts
+                          ? 'text-red-800'
+                          : conflictCheckResult.conflictCount > 0
+                          ? 'text-yellow-800'
+                          : 'text-green-800'
+                      }`}>
+                        Conflict Check Results
+                      </h3>
+                    </div>
+
+                    <p className={`text-sm font-medium ${
+                      conflictCheckResult.blockedCount > 0 && !skipConflicts
+                        ? 'text-red-700'
+                        : conflictCheckResult.conflictCount > 0
+                        ? 'text-yellow-700'
+                        : 'text-green-700'
+                    }`}>
+                      {conflictCheckResult.message}
+                    </p>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="bg-white rounded-md p-3 shadow-sm">
+                        <div className="text-xs text-gray-600 mb-1">Total Dates</div>
+                        <div className="text-2xl font-bold text-gray-900">{conflictCheckResult.totalDates}</div>
+                      </div>
+                      <div className="bg-white rounded-md p-3 shadow-sm">
+                        <div className="text-xs text-green-600 mb-1">Can Proceed</div>
+                        <div className="text-2xl font-bold text-green-600">{conflictCheckResult.canProceedCount}</div>
+                      </div>
+                      <div className="bg-white rounded-md p-3 shadow-sm">
+                        <div className="text-xs text-yellow-600 mb-1">Conflicts</div>
+                        <div className="text-2xl font-bold text-yellow-600">{conflictCheckResult.conflictCount}</div>
+                      </div>
+                      <div className="bg-white rounded-md p-3 shadow-sm">
+                        <div className="text-xs text-red-600 mb-1">Blocked</div>
+                        <div className="text-2xl font-bold text-red-600">{conflictCheckResult.blockedCount}</div>
+                      </div>
+                    </div>
+
+                    {conflictCheckResult.conflicts && conflictCheckResult.conflicts.length > 0 && (
+                      <details className="mt-4">
+                        <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
+                          View detailed conflicts ({conflictCheckResult.conflicts.filter(c => c.hasConflict).length} dates)
+                        </summary>
+                        <div className="mt-3 max-h-60 overflow-y-auto space-y-2">
+                          {conflictCheckResult.conflicts.filter(c => c.hasConflict).map((conflict, index) => (
+                            <div
+                              key={index}
+                              className={`p-3 rounded-md text-sm ${
+                                conflict.canProceed
+                                  ? 'bg-yellow-100 border border-yellow-300'
+                                  : 'bg-red-100 border border-red-300'
+                              }`}
+                            >
+                              <div className="font-medium">
+                                {conflict.bookingDate} - {conflict.dayOfWeek}
+                              </div>
+                              <div className="text-xs mt-1">{conflict.message}</div>
+                              {conflict.alternativeFacilityName && (
+                                <div className="text-xs mt-1 text-green-700">
+                                  Alternative: {conflict.alternativeFacilityName}
+                                </div>
+                              )}
+                              {conflict.conflictingBooking && (
+                                <div className="text-xs mt-1 text-gray-600">
+                                  Booked by: {conflict.conflictingBooking.userName} ({conflict.conflictingBooking.userRole})
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {checkingConflicts && bookingType === "recurring" && (
+              <div className="border-t pt-4">
+                <div className="rounded-lg bg-blue-50 border-2 border-blue-300 p-4">
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                    <span className="text-blue-800 font-medium">Checking for conflicts...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={submitting || checkingConflicts}>
               Cancel
             </Button>
 
-            <Button type="submit" className="bg-orange-500 hover:bg-orange-600" disabled={submitting}>
-              {submitting 
-                ? "Submitting..." 
-                : bookingType === "recurring"
-                ? `Submit Recurring Booking (${selectedSlots.length} slot${selectedSlots.length > 1 ? "s" : ""})`
-                : `Submit ${selectedSlots.length} Booking Request${selectedSlots.length > 1 ? "s" : ""}`
-              }
-            </Button>
+            {bookingType === "recurring" && !conflictChecked && (
+              <Button 
+                type="button" 
+                onClick={handleCheckConflicts} 
+                className="bg-blue-500 hover:bg-blue-600"
+                disabled={checkingConflicts || !startDate || !endDate || selectedSlots.length === 0 || !purpose}
+              >
+                {checkingConflicts ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Checking Conflicts...
+                  </>
+                ) : (
+                  `Check Conflicts for ${selectedSlots.length} Slot${selectedSlots.length > 1 ? "s" : ""}`
+                )}
+              </Button>
+            )}
+
+            {(bookingType === "single" || (bookingType === "recurring" && conflictChecked)) && (
+              <Button 
+                type="submit" 
+                className="bg-orange-500 hover:bg-orange-600" 
+                disabled={submitting || checkingConflicts}
+              >
+                {submitting 
+                  ? "Submitting..." 
+                  : bookingType === "recurring"
+                  ? `Proceed with Booking (${selectedSlots.length} slot${selectedSlots.length > 1 ? "s" : ""})`
+                  : `Submit ${selectedSlots.length} Booking Request${selectedSlots.length > 1 ? "s" : ""}`
+                }
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>

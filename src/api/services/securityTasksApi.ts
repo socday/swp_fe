@@ -26,6 +26,14 @@ export interface BookingForSecurityTask {
   purpose?: string;
 }
 
+export interface SecurityStaffMember {
+  userId: number;
+  fullName: string;
+  email: string;
+  pendingTaskCount: number;
+  isActive: boolean;
+}
+
 const normalizeNumericId = (value?: string | number | null): number | undefined => {
   if (value === undefined || value === null) return undefined;
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -46,7 +54,7 @@ const fetchSecurityStaff = async (): Promise<UserResponse[]> => {
 
 const fetchPendingTasks = async (): Promise<SecurityTask[]> => {
   try {
-    return await securityTaskController.getPendingTasks();
+    return await securityTaskController.getSecurityTasks();
   } catch (error) {
     console.error('Failed to load pending security tasks:', error);
     return [];
@@ -91,8 +99,18 @@ const buildTaskDescription = (booking: BookingForSecurityTask): string => {
 };
 
 export const securityTasksApi = {
-  async getPendingTasks(): Promise<SecurityTask[]> {
+  async getSecurityTasks(): Promise<SecurityTask[]> {
     return fetchPendingTasks();
+  },
+
+  async getSecurityStaffWithTaskCounts(): Promise<SecurityStaffMember[]> {
+    try {
+      const response = await securityTaskController.getSecurityStaffWithTaskCounts();
+      return response || [];
+    } catch (error) {
+      console.error('Failed to fetch security staff with task counts:', error);
+      return [];
+    }
   },
 
   // 🔹 Confirm / complete security task
@@ -101,7 +119,7 @@ export const securityTasksApi = {
     reportNote?: string
   ): Promise<{ success: boolean; message?: string; error?: string }> {
     try {
-      const response = await securityTaskController.completeTask(taskId, {
+      const response = await securityTaskController.completeTask(taskId, {  
         reportNote,
       });
 

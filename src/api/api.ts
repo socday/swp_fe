@@ -2,7 +2,7 @@ export { authApi } from './services/authApi';
 export { campusesApi } from './services/campusesApi';
 export { facilitiesApi, type FacilityFilters } from './services/facilitiesApi';
 export { slotsApi } from './services/slotsApi';
-export { bookingsApi } from './services/bookingsApi';
+export { bookingsApi, type PaginatedBookings } from './services/bookingsApi';
 export { reportsApi } from './services/reportsApi';
 export { notificationsApi } from './services/notificationsApi';
 export { roomsApi, facilityToRoom } from './services/roomsApi';

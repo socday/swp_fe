@@ -7,6 +7,8 @@ import type { User } from './userTypes';
 export interface Booking {
   bookingId: number;
   userId: number;
+  userName?: string;
+  bookedBy?: string;
   facilityId: number;
   bookingDate: string;
   slotId: number;
@@ -24,29 +26,46 @@ export interface Booking {
   facility?: Facility;
   slot?: Slot;
   approver?: User;
+  startTime?: string;
+  endTime?: string;
+  slotName?: string;
+  facilityName?: string;
 }
 
-export interface GetBookingRepsonse {
-  bookedBy:string;
-  bookingDate: Date;
+export interface ApiBooking {
   bookingId: number;
-  rejectionReason?: string;
-  purpose: string;
-  slotId: number;
-  facilityId: number;
-  campusName: string;
-  endTime: Date;
-  facilityName: string;
-  startTime: Date;
-  status: string;
   userId: number;
+  facilityName: string;
+  campusName: string;
+  bookingDate: string;   
+  startTime: string;    
+  endTime: string;       
+  status: string;
+  bookedBy: string;
+  purpose?: string;
+  rejectionReason?: string;
 }
+
+export interface GetBookingResponse {
+  bookingId: number;
+  userId: number;
+  bookedBy: string;
+  facilityName: string;
+  campusName: string;
+  bookingDate: string;   // ISO string
+  startTime: string;     // "09:30:00"
+  endTime: string;       // "11:45:00"
+  status: string;
+  purpose?: string;
+  rejectionReason?: string;
+}
+
 
 export interface BookingCreateRequest {
   facilityId: number;
   bookingDate: string;
   slotId: number;
-  purpose?: string;
+  purpose?: string | undefined;
 }
 
 export interface BookingStatusUpdate {
@@ -79,7 +98,87 @@ export interface BookingFilterRequest {
   sortBy?: string;
 }
 
+export interface PagedResult<T> {
+  items: T[];
+  totalRecords: number;
+  pageIndex: number;
+  pageSize: number;
+}
+
 export interface StaffCancelRequest {
   staffId: number;
   reason: string;
+}
+
+export interface RecurringBookingSummary {
+  recurrenceGroupId: string; // UUID format
+  recurrenceId?: string; // Alias for recurrenceGroupId (for backwards compatibility)
+  userId: number;
+  userName: string;
+  facilityId: number;
+  facilityName: string;
+  slotId: number;
+  slotName: string;
+  patternName?: string; // Pattern name (e.g., "Daily", "Weekly")
+  purpose: string;
+  startDate: string; // ISO date format "YYYY-MM-DD"
+  endDate: string;   // ISO date format "YYYY-MM-DD"
+  totalBookings: number;
+  pendingCount: number;
+  approvedCount: number;
+  rejectedCount: number;
+  cancelledCount: number;
+  createdAt: string; // ISO DateTime format
+}
+
+export interface BookingIndividualSummary {
+  id: number;
+  userId: number;
+  bookingDate: string; // "2025-12-18"
+  totalAmount: number;
+  status: "Pending" | "Approved" | "Rejected" | "Cancelled" | "Completed"; // Union type for better safety
+  facilityName: string;
+  slotName: string;
+  startTime: string;   // "19:30:00"
+  endTime: string;     // "21:00:00"
+}
+
+export interface BookingConflictDto {
+  bookingId: number;
+  userId: number;
+  userName: string;
+  userEmail: string;
+  userRole: string;
+  facilityId: number;
+  facilityName: string;
+  bookingDate: string;
+  slotId: number;
+  slotName: string;
+  startTime: string;
+  endTime: string;
+  purpose: string;
+  status: string;
+  canOverride: boolean;
+  message: string;
+}
+
+export interface RecurringConflictDto {
+  bookingDate: string;
+  dayOfWeek: string;
+  conflictingBooking?: BookingConflictDto;
+  hasConflict: boolean;
+  canProceed: boolean;
+  alternativeFacilityId?: string;
+  alternativeFacilityName?: string;
+  message: string;
+}
+
+export interface RecurringConflictCheckResponse {
+  success: boolean;
+  message: string;
+  totalDates: number;
+  conflictCount: number;
+  canProceedCount: number;
+  blockedCount: number;
+  conflicts: RecurringConflictDto[];
 }

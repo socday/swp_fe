@@ -20,6 +20,7 @@ export const reportsApi = {
   ): Promise<{ success: boolean; message?: string; error?: string }> {
     try {
       const payload = toBackendReport(report);
+      console.log("CREATE REPORT PAYLOAD:", payload);
       const response = await reportsController.createReport(payload);
       return { success: true, message: response.message };
     } catch (error) {

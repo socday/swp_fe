@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import {
   securityApi,
@@ -7,9 +7,10 @@ import {
   Room,
   SecurityTask,
   Report,
+  ReportCreateRequest,
 } from "../../api/api";
 import { User } from "../../App";
-import type { FrontendReport } from "../../api/apiAdapters";
+import type { FrontendBooking, FrontendReport } from "../../api/apiAdapters";
 import { reportsApi } from "../../api/services/reportsApi";
 
 export function useSecurityDashboard(user: User) {
@@ -18,7 +19,7 @@ export function useSecurityDashboard(user: User) {
 
   // Data
   const [tasks, setTasks] = useState<SecurityTask[]>([]);
-  const [approvedBookings, setApprovedBookings] = useState<Booking[]>([]);
+  const [approvedBookings, setApprovedBookings] = useState<FrontendBooking[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -28,6 +29,7 @@ export function useSecurityDashboard(user: User) {
   const [completionNotes, setCompletionNotes] = useState("");
 
   // Report Submit Dialog state
+  const [selectedTimeStart, setSelectedTimeStart] = useState<string>("");
   const [submitReportDialogOpen, setSubmitReportDialogOpen] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState("");
   const [reportType, setReportType] = useState<Report["type"]>("maintenance");
@@ -35,6 +37,33 @@ export function useSecurityDashboard(user: User) {
     useState<Report["severity"]>("Medium");
   const [reportDescription, setReportDescription] = useState("");
   const [reports, setReports] = useState<FrontendReport[]>([]);
+ 
+const roomIdToNameMap = rooms.reduce((acc, room) => {
+  acc[room.id] = room.name;
+  return acc;
+}, {} as Record<number, string>);
+  
+const roomBookings = approvedBookings.filter(
+  b => b.facilityName === roomIdToNameMap[Number(selectedRoomId)]
+);
+
+const roomTimeSlots = roomBookings.map(b => ({
+  value: `${b.date}|${b.startTime}|${b.endTime}`,
+  label: `${b.date} · ${b.startTime} - ${b.endTime}`,
+}));
+
+const bookingMap = useMemo(() => {
+  const map: Record<number, FrontendBooking> = {};
+  approvedBookings.forEach(b => {
+    map[b.id] = b;
+  });
+  return map;
+}, [approvedBookings]);
+
+
+useEffect(() => {
+  setSelectedTimeStart("");
+}, [selectedRoomId]);
 
   const loadReports = async () => {
   setLoading(true);
@@ -46,7 +75,9 @@ export function useSecurityDashboard(user: User) {
     if (activeTab === "tasks") loadTasks();
     if (activeTab === "schedule") loadApprovedBookings();
     if (activeTab === "inspection") loadRooms();
-    if (activeTab === "reports") loadReports();  
+    if (activeTab === "reports") 
+      loadReports(); 
+    loadApprovedBookings();  
   }, [activeTab]);
 
   const loadTasks = async () => {
@@ -56,9 +87,11 @@ export function useSecurityDashboard(user: User) {
   };
 
   const loadApprovedBookings = async () => {
-    setLoading(true);
-    setApprovedBookings(await securityApi.getApprovedBookings());
-    setLoading(false);
+  setLoading(true);
+  const data = await securityApi.getApprovedBookings();
+  console.log('Approved bookings:', data);
+  setApprovedBookings(data);  
+  setLoading(false);
   };
 
   const loadRooms = async () => {
@@ -86,46 +119,65 @@ export function useSecurityDashboard(user: User) {
     }
   };
 
-  const handleSubmitReport = async () => {
-    if (!selectedRoomId || !reportDescription.trim()) {
-      toast.error("Please fill all required fields");
-      return;
-    }
+const handleSubmitReport = async () => {
+  if (!selectedRoomId || !selectedTimeStart || !reportDescription.trim()) {
+    toast.error("Please fill all required fields");
+    return;
+  }
 
-    const room = rooms.find((r) => r.id === selectedRoomId);
-    if (!room) return;
+  const selectedBooking = approvedBookings.find(
+    (b) =>
+      b.facilityName === roomIdToNameMap[Number(selectedRoomId)] &&
+      `${b.date}|${b.startTime}|${b.endTime}` === selectedTimeStart
+  );
 
-    const success = await securityApi.submitReport({
-      roomId: selectedRoomId,
-      roomName: room.name,
-      reporterRole: "security",
-      reporterName: user.name,
-      reporterId: user.id,
-      type: reportType,
-      description: reportDescription,
-      severity: reportSeverity,
-    });
+  if (!selectedBooking) {
+    toast.error("No approved booking found for selected time");
+    return;
+  }
 
-    if (success) {
-      toast.success("Report submitted");
-      resetReportForm();
-    } else {
-      toast.error("Failed to submit");
-    }
+  const payload: ReportCreateRequest = {
+    facilityId: Number(selectedRoomId),
+    bookingId: selectedBooking.id, 
+    title: reportType,
+    reportType,
+    description: `
+${reportDescription}
+`.trim(),
   };
+
+  const success = await securityApi.submitReport(payload);
+
+  if (success) {
+    toast.success("Report submitted successfully");
+    resetReportForm();
+  } else {
+    toast.error("Failed to submit report");
+  }
+};
+
+
+
 
   const resetReportForm = () => {
     setSubmitReportDialogOpen(false);
     setSelectedRoomId("");
+    setSelectedTimeStart("");
     setReportType("maintenance");
     setReportSeverity("Medium");
     setReportDescription("");
   };
 
   const handleOpenReportDialog = async () => {
-    await loadRooms();
+    setLoading(true);
+    await Promise.all([
+      loadRooms(),
+      loadApprovedBookings(), 
+    ]);
+    setLoading(false);
     setSubmitReportDialogOpen(true);
   };
+
 
   const getTaskIcon = () => <></>; // replaced by UI icons
 
@@ -154,6 +206,12 @@ export function useSecurityDashboard(user: User) {
     upcomingDates,
     rooms,
     loading,
+    bookingMap,
+
+    roomBookings,
+    selectedTimeStart,
+    setSelectedTimeStart,
+    roomTimeSlots,
 
     // UI States
     activeTab,

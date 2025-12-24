@@ -6,8 +6,7 @@
  * 
  * This file ensures all API responses are transformed to match frontend expectations
  */
-import { REPORT_TYPES } from './api/types/reportTypes';
-import type { Campus, Facility, Slot, Booking, Report, Notification, GetBookingRepsonse, GetFacilityResponse } from './api/types';
+import type { Campus, Facility, Slot, Booking, Report, Notification, GetBookingRepsonse, GetFacilityResponse, GetBookingResponse } from './api/types';
 
 // ============================================================================
 // FRONTEND INTERFACES (What components expect)
@@ -24,6 +23,7 @@ export interface FrontendFacility {
   id: number;
   name: string;
   capacity: number;
+  campusName: string;
   status: string;
   imageUrl?: string;
   description?: string;
@@ -41,39 +41,35 @@ export interface FrontendSlot {
 export interface FrontendBooking {
   id: number;
   userId: number;
-  facilityId: number;
+  facilityId: number;     
   date: string;
-  slotId: number;
-  purpose?: string;
-  bookingType?: string;
+  slotId?: number;
   status: string;
-  rejectionReason?: string; 
-  // Populated fields
+  purpose?: string;
+  rejectionReason?: string;
   userName?: string;
   facilityName?: string;
-  slotName?: string;
-  startTime?: Date;
-  endTime?: Date;
+  bookedBy?: string;
+  startTime?: string;     
+  endTime?: string;  
 }
 
 export interface FrontendReport {
   reportId: number;
   title: string;
   description: string;
-  reportType: ReportType;
+  reportType: string;
   status: string;
-  createdAt: string; // Required based on your JSON
-  createdBy: string; // Mapped from your email field
-  facilityName: string;
-  // Reporter details (may be present depending on backend)
-  reporterId?: number;
-  reporterRole?: string;
-  
-  // Optional/Nullable fields based on previous structure
-  facilityId?: number;
-  bookingId?: number;
+
+  createdAt: string;
   resolvedAt?: string;
+
+  createdBy?: string;    
+  facilityId?: number;
+  facilityName?: string;
+  bookingId?: number;
 }
+
 
 export interface FrontendNotification {
   id: number;
@@ -104,18 +100,17 @@ export function adaptCampus(backend: Campus): FrontendCampus {
 /**
  * Map Facility from backend to frontend format
  */
-export function adaptFacility(backend: Facility): FrontendFacility {
+export function adaptFacility(backend: GetFacilityResponse): FrontendFacility {
   return {
     id: backend.facilityId,
     name: backend.facilityName,
-    campusId: backend.campusId,
-    typeId: backend.typeId,
-    capacity: backend.capacity,
+    capacity: backend.facilityCapacity,
+    typeName: backend.typeName,
+    campusName: backend.campusName,
+
     status: backend.status,
     imageUrl: backend.imageUrl,
-    description: backend.description,
-    campus: backend.campus ? adaptCampus(backend.campus) : undefined,
-    typeName: backend.type?.typeName,
+
   };
 }
 
@@ -135,24 +130,23 @@ export function adaptSlot(backend: Slot): FrontendSlot {
 /**
  * Map Booking from backend to frontend format
  */
-export function adaptBooking(backend: GetBookingRepsonse): FrontendBooking {
-  const bookingDateStr = typeof backend.bookingDate === 'string'
-    ? backend.bookingDate.split('T')[0]
-    : new Date(backend.bookingDate).toISOString().split('T')[0];
-
+export function adaptBooking(
+  backend: Booking 
+): FrontendBooking {
   return {
     id: backend.bookingId,
     userId: backend.userId,
+    userName: backend.userName,
+    bookedBy: backend.bookedBy,
     facilityId: backend.facilityId,
     facilityName: backend.facilityName,
-    startTime: backend.startTime,
-    endTime: backend.endTime,
-    date: bookingDateStr,
+    date: backend.bookingDate,
     slotId: backend.slotId,
-    purpose: backend.purpose,
+    startTime: backend.startTime ,
+    endTime: backend.endTime,
     status: backend.status,
+    purpose: backend.purpose,
     rejectionReason: backend.rejectionReason,
-    userName: backend.bookedBy,
   };
 }
 
@@ -161,20 +155,19 @@ export function adaptBooking(backend: GetBookingRepsonse): FrontendBooking {
  */
 export function adaptReport(backend: Report): FrontendReport {
   return {
-   reportId: backend.reportId,
+    reportId: backend.reportId,
     title: backend.title,
     description: backend.description,
     reportType: backend.reportType,
     status: backend.status,
+
     createdAt: backend.createdAt,
-    createdBy: backend.user?.fullName ?? '',
-    // Map reporter id & role if present
-    reporterId: backend.user?.userId,
-    reporterRole: backend.user?.roleName || backend.user?.role?.name,
-    facilityName: backend.facility?.facilityName ?? '',
-    facilityId: backend.facilityId,
-    bookingId: backend.bookingId,
     resolvedAt: backend.resolvedAt,
+
+    createdBy: backend.createdBy,
+    facilityId: backend.facilityId,
+    facilityName: backend.facilityName,
+    bookingId: backend.bookingId,
   };
 }
 
@@ -187,7 +180,7 @@ export function adaptNotification(backend: Notification): FrontendNotification {
     userId: backend.userId,
     title: backend.title,
     message: backend.message,
-    isRead: backend.isRead,
+    isRead: backend.isRead ?? false,
     type: backend.type,
     createdAt: backend.createdAt,
   };
@@ -209,8 +202,6 @@ export function adaptSlots(backends: Slot[]): FrontendSlot[] {
 }
 
 export function adaptBookings(backends: Booking[]): FrontendBooking[] {
-  console.log('Adapting bookings:', backends);
-  console.log('Adapting bookings map:', backends.map(adaptBooking));
   return backends.map(adaptBooking);
 }
 

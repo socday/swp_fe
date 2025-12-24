@@ -1,5 +1,6 @@
 import authController from '../api/controllers/authController';
-import type { LoginRequest, User } from '../api/types';
+import type { LoginRequest, LoginResponse, User } from '../api/types';
+import { apiClient } from '../httpClient';
 import { mapBackendRole, persistToken, safeErrorMessage } from './common';
 
 export const authApi = {
@@ -43,4 +44,16 @@ export const authApi = {
       return { success: false, error: message };
     }
   },
+};
+
+export async function loginWithGoogle(accessToken: string): Promise<LoginResponse> {
+  const res = await apiClient.post<LoginResponse>("/Auth/google-login", 
+    { idToken: accessToken }, 
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  return res.data;
 };

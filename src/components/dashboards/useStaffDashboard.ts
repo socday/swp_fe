@@ -10,16 +10,24 @@ import {
   Report,
   securityTasksApi,
 } from "../../api/api";
-import { BookingForSecurityTask } from "../../api/services/securityTasksApi";
+import type { RecurringBookingSummary } from '../../api/api/types';
+import { BookingForSecurityTask, SecurityStaffMember } from "../../api/services/securityTasksApi";
+import { Console } from "console";
 
 export function useStaffDashboard() {
   const [activeTab, setActiveTab] = useState("approvals");
+  const [bookingType, setBookingType] = useState<"individual" | "recurring">("individual");
   const [pendingBookings, setPendingBookings] = useState<Booking[]>([]);
+  const [recurringGroups, setRecurringGroups] = useState<RecurringBookingSummary[]>([]);
   const [bookingHistory, setBookingHistory] = useState<Booking[]>([]);
+  const [bookingHistoryPage, setBookingHistoryPage] = useState(1);
+  const [bookingHistoryPageSize, setBookingHistoryPageSize] = useState(10);
+  const [bookingHistoryTotalRecords, setBookingHistoryTotalRecords] = useState(0);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [securityTasks, setSecurityTasks] = useState<SecurityTask[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(false);
+  const [securityStaff, setSecurityStaff] = useState<SecurityStaffMember[]>([]);
 
   // Dialog states
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
@@ -48,25 +56,53 @@ export function useStaffDashboard() {
 
   // ========================= LOADERS ========================= //
   useEffect(() => {
+    loadSecurityStaff();
+  }, []);
+
+  useEffect(() => {
     if (activeTab === "approvals") loadPendingBookings();
     else if (activeTab === "history") loadBookingHistory();
     else if (activeTab === "rooms") loadRooms();
     else if (activeTab === "security") loadSecurityTasks();
     else if (activeTab === "reports") loadReports();
-  }, [activeTab]);
+  }, [activeTab, bookingType]);
+
+  const loadSecurityStaff = async () => {
+    try {
+      const staff = await securityTasksApi.getSecurityStaffWithTaskCounts();
+      setSecurityStaff(staff);
+    } catch (error) {
+      console.error('Failed to load security staff:', error);
+    }
+  };
 
   const loadPendingBookings = async () => {
     setLoading(true);
-    const data = await staffApi.getPendingBookings();
-    setPendingBookings(data);
-    setLoading(false);
+    try {
+      if (bookingType === "individual") {
+        const data = await staffApi.getPendingBookings();
+        setPendingBookings(data);
+      } else {
+        const groups = await bookingsApi.getBookingRecurrenceGroup();
+        setRecurringGroups(groups);
+      }
+    } catch (error) {
+      console.error("Failed to load bookings:", error);
+      toast.error("Failed to load bookings");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const loadBookingHistory = async () => {
+  const loadBookingHistory = async (page: number = bookingHistoryPage, pageSize: number = bookingHistoryPageSize) => {
     setLoading(true);
-    const data = await staffApi.getBookingHistory();
-    setBookingHistory(data);
+    const data = await staffApi.getBookingHistory(page, pageSize);
+    setBookingHistory(data.bookings);
+    setBookingHistoryTotalRecords(data.totalRecords);
+    setBookingHistoryPage(data.pageIndex);
+    setBookingHistoryPageSize(data.pageSize);
     setLoading(false);
+    console.log("Loaded booking history:", data);
   };
 
   const loadRooms = async () => {
@@ -81,55 +117,74 @@ export function useStaffDashboard() {
     const data = await staffApi.getSecurityTasks();
     setSecurityTasks(data);
     setLoading(false);
+    console.log("Loaded security tasks:", data);
   };
 
-  const loadReports = async () => {
-    setLoading(true);
-    const data = await staffApi.getReports();
-    setReports(data);
+const loadReports = async () => {
+  setLoading(true);
+  try {
+    const [reportsData, bookingsDataPaginated] = await Promise.all([
+      staffApi.getReports(),
+      staffApi.getBookingHistory(),
+    ]);
+    console.log("Fetched reports data:", reportsData);
+    console.log("Fetched bookings data for reports:", bookingsDataPaginated);
+    const bookingMap = new Map(
+      bookingsDataPaginated.bookings.map((b) => [Number(b.id), b])
+    );
+
+    const mergedReports = reportsData.map((r) => {
+      const booking = bookingMap.get(Number(r.bookingId));
+
+      return {
+        ...r,
+        id: r.reportId,
+        roomName: r.facilityName,
+        userName: booking?.userName ?? r.createdBy,
+        startTime: booking?.startTime ?? null, 
+      };
+    });
+
+    setReports(mergedReports);
+  } catch (e) {
+    console.error("Failed to load reports:", e);
+    toast.error("Failed to load reports");
+  } finally {
     setLoading(false);
-  };
+  }
+};
+
+
+
 
   // ========================= ACTION HANDLERS ========================= //
 
   const normalizeBookingId = (rawId: string | number): number =>
     typeof rawId === "string" ? parseInt(rawId, 10) : rawId;
 
-  const handleApproveBooking = async (id: string | number, booking: Booking) => {
+  const handleApproveBooking = async (id: string | number, booking: Booking, assignedToUserId?: number) => {
     const numericId = normalizeBookingId(id);
     if (Number.isNaN(numericId)) {
       toast.error("Invalid booking identifier");
       return;
     }
 
-    const result = await bookingsApi.updateStatus(numericId, { status: "Approved" });
-    if (result.success) {
-      toast.success(result.message || "Booking approved successfully");
-      loadPendingBookings();
+    if (!assignedToUserId) {
+      toast.error("Please select a security staff member");
+      return;
+    }
 
-      const bookingContext = booking;
-      console.log("Booking context for security task assignment:", bookingContext);
-        if (!bookingContext) {
-          console.warn('Unable to find booking for security task assignment');
-          return;
-        }
-      const autoAssignResult = await securityTasksApi.autoAssignForBooking();
-      if (autoAssignResult.error) {
-        toast.error(`Security task auto-assignment failed: ${autoAssignResult.error}`);
-      }
-      else {
-        const success = await securityTasksApi.createSecurityTask({
-            title: `Security Task for Booking #${numericId}`,
-            description: `Auto-assigned open room security task for approved booking #${numericId}`,
-            priority: undefined,
-            assignedToId: autoAssignResult.assignedTo?.id ?? 0
-        })
-        if (success) {
-          toast.success(autoAssignResult.success);
-        }
-      }
-          
-    } else toast.error(result.error || "Failed to approve booking");
+    const result = await bookingsApi.updateStatus(numericId, { 
+      status: "Approved",
+      assignedToUserId 
+    });
+    if (result.success) {
+      toast.success(result.message || "Booking approved and security task assigned.");
+      loadPendingBookings();
+      loadSecurityStaff(); // Refresh staff counts
+    } else {
+      toast.error(result.error || "Failed to approve booking");
+    }
   };
 
   const handleRejectBooking = async (id: string | number) => {
@@ -209,11 +264,17 @@ const handleCreateSecurityTask = async (newTaskTitle: string, newTaskDescription
 
   const handleReviewReport = async () => {
     if (!selectedReport) return;
+      console.log("=== REVIEW REPORT CLICKED ===");
+  console.log("Selected report:", selectedReport);
+  console.log("Report ID being sent:", selectedReport.id);
+  console.log("Report status:", reportStatus);
+  console.log("Report response:", reportResponse);
     const success = await staffApi.updateReportStatus(
       selectedReport.id,
       reportStatus,
       reportResponse
     );
+    console.log("Update report API result:", success);
 
     if (success) {
       toast.success("Report reviewed");
@@ -221,19 +282,38 @@ const handleCreateSecurityTask = async (newTaskTitle: string, newTaskDescription
       setSelectedReport(null);
       setReportResponse("");
       loadReports();
+      console.log("Report reviewed successfully");
     } else toast.error("Failed to review report");
+  };
+
+  const handleBookingHistoryPageChange = (newPage: number) => {
+    setBookingHistoryPage(newPage);
+    loadBookingHistory(newPage, bookingHistoryPageSize);
+  };
+
+  const handleBookingHistoryPageSizeChange = (newPageSize: number) => {
+    setBookingHistoryPageSize(newPageSize);
+    setBookingHistoryPage(1);
+    loadBookingHistory(1, newPageSize);
   };
 
   // ========================= EXPORT HOOK ========================= //
   return {
     activeTab,
     setActiveTab,
+    bookingType,
+    setBookingType,
     pendingBookings,
+    recurringGroups,
     bookingHistory,
+    bookingHistoryPage,
+    bookingHistoryPageSize,
+    bookingHistoryTotalRecords,
     rooms,
     securityTasks,
     reports,
     loading,
+    securityStaff,
 
     // dialogs
     selectedBooking,
@@ -281,5 +361,8 @@ const handleCreateSecurityTask = async (newTaskTitle: string, newTaskDescription
     handleCancelBooking,
     handleCreateSecurityTask,
     handleReviewReport,
+    handleBookingHistoryPageChange,
+    handleBookingHistoryPageSizeChange,
+    onRecurringGroupActionComplete: loadPendingBookings,
   };
 }

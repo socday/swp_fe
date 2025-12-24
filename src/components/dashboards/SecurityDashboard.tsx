@@ -194,6 +194,10 @@ export function SecurityDashboard({ user, onLogout }) {
                         <TableHead>Title</TableHead>
                         <TableHead>Description</TableHead>
                         <TableHead>Type</TableHead>
+                        <TableHead>Date</TableHead> 
+                        <TableHead>Room</TableHead>
+                        <TableHead>Booking ID</TableHead>
+                        <TableHead>Created By</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Created At</TableHead>
                       </TableRow>
@@ -202,11 +206,31 @@ export function SecurityDashboard({ user, onLogout }) {
                     <TableBody>
                       {s.reports.map(report => (
                         <TableRow key={report.reportId}>
-                          <TableCell>{report.title}</TableCell>
-                          <TableCell>{report.description}</TableCell>
+                         <TableCell>{report.title}</TableCell>
+                          <TableCell className="max-w-xs truncate">
+                            {report.description}
+                          </TableCell>
                           <TableCell>{report.reportType}</TableCell>
-                          <TableCell>{report.status}</TableCell>
-                          <TableCell>{new Date(report.createdAt).toLocaleString()}</TableCell>
+                          <TableCell>
+                              {s.bookingMap[report.bookingId]?.date
+                                ? new Date(s.bookingMap[report.bookingId].date).toLocaleDateString()
+                                : "—"}
+                            </TableCell>
+                          <TableCell>{report.facilityName ?? "—"}</TableCell>
+                              <TableCell>
+                                {report.bookingId && s.bookingMap[report.bookingId]
+                                  ? `${s.bookingMap[report.bookingId].startTime} - ${s.bookingMap[report.bookingId].endTime}`
+                                  : "—"}
+                              </TableCell>
+                          <TableCell>{report.createdBy ?? "—"}</TableCell>
+
+                          <TableCell>
+                            <Badge>{report.status}</Badge>
+                          </TableCell>
+
+                          <TableCell>
+                            {new Date(report.createdAt).toLocaleString()}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -327,13 +351,48 @@ function InspectionTabUI({ s }) {
                 </SelectTrigger>
                 <SelectContent>
                   {s.rooms.map(room => (
-                    <SelectItem key={room.id} value={room.id}>
+                    <SelectItem key={room.id} value={String(room.id)}>
                       {room.name} - {room.building}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+
+<Label>Select Time</Label>
+<Select
+  value={s.selectedTimeStart}
+  onValueChange={s.setSelectedTimeStart}
+>
+  <SelectTrigger>
+    <SelectValue
+      placeholder={
+        !s.selectedRoomId
+          ? "Select room first"
+          : s.roomTimeSlots.length === 0
+          ? "No approved schedule for this room"
+          : "Choose time slot"
+      }
+    />
+  </SelectTrigger>
+
+  <SelectContent>
+    {s.roomTimeSlots.length === 0 ? (
+      <SelectItem value="none" disabled>
+        No approved schedule
+      </SelectItem>
+    ) : (
+      s.roomTimeSlots.map(t => (
+        <SelectItem key={t.value} value={t.value}>
+          {t.label}
+        </SelectItem>
+      ))
+    )}
+  </SelectContent>
+</Select>
+
+          </div>
 
             <div className="space-y-2">
               <Label>Report Type</Label>
