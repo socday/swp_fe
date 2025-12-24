@@ -14,7 +14,6 @@ export const securityTaskController = {
     );
     return data;
   },
-
   async completeTask(
     taskId: number,
     payload?: CompleteTaskRequest

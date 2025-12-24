@@ -6,7 +6,7 @@ export interface SecurityTask {
 
   status: string;      
   priority: string;
-
+  taskType: TaskType;
   assignedToUserId?: number;
   assignedToUserName?: string;
   createdBy?: number;
@@ -15,6 +15,10 @@ export interface SecurityTask {
   createdAt?: string;
   completedAt?: string;
 }
+export type TaskType =
+  | "CHECKED_IN"
+  | "CHECKED_OUT"
+  | "CHECKED_NOT_IN";
 
 export interface CompleteTaskRequest {
   reportNote?: string;
