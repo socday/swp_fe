@@ -18,6 +18,7 @@ export function useSecurityDashboard(user: User) {
   const [activeTab, setActiveTab] = useState("tasks");
 
   // Data
+  const [taskFilter, setTaskFilter] = useState<"all" | "today">("all");
   const [tasks, setTasks] = useState<SecurityTask[]>([]);
   const [approvedBookings, setApprovedBookings] = useState<FrontendBooking[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -39,7 +40,24 @@ export function useSecurityDashboard(user: User) {
   const [reportDescription, setReportDescription] = useState("");
   const [reports, setReports] = useState<FrontendReport[]>([]);
  
-  
+  const today = new Date().toISOString().split("T")[0];
+  const bookingMap = useMemo(() => {
+  const map: Record<number, FrontendBooking> = {};
+  approvedBookings.forEach(b => {
+    map[b.id] = b;
+  });
+  return map;
+}, [approvedBookings]);
+const filteredTasks = useMemo(() => {
+  if (taskFilter === "today") {
+    return tasks.filter(task => {
+      const booking = bookingMap[task.bookingId];
+      return booking?.date === today;
+    });
+  }
+  return tasks;
+}, [tasks, bookingMap, taskFilter, today]);
+
 const roomIdToNameMap = rooms.reduce((acc, room) => {
   acc[room.id] = room.name;
   return acc;
@@ -54,13 +72,6 @@ const roomTimeSlots = roomBookings.map(b => ({
   label: `${b.date} · ${b.startTime} - ${b.endTime}`,
 }));
 
-const bookingMap = useMemo(() => {
-  const map: Record<number, FrontendBooking> = {};
-  approvedBookings.forEach(b => {
-    map[b.id] = b;
-  });
-  return map;
-}, [approvedBookings]);
 
 const openCompleteTaskDialog = (task: SecurityTask) => {
   setSelectedTask(task);
@@ -198,7 +209,6 @@ ${reportDescription}
     return acc;
   }, {} as Record<string, Booking[]>);
 
-  const today = new Date().toISOString().split("T")[0];
   const todayBookings = bookingsByDate[today] || [];
 
   const upcomingDates = Array.from({ length: 7 }, (_, i) => {
@@ -208,8 +218,11 @@ ${reportDescription}
   });
 
   return {
+      tasks,
+  filteredTasks,
+  taskFilter,
+  setTaskFilter,
     // Data
-    tasks,
     approvedBookings,
     bookingsByDate,
     todayBookings,
