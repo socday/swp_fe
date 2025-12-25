@@ -87,16 +87,37 @@ export function SecurityDashboard({ user, onLogout }) {
           <TabsContent value="tasks" className="space-y-4">
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <StatCard title="Total Tasks" value={s.tasks.length} />
-              <StatCard title="Pending" value={s.tasks.filter(t => t.status === "Pending").length} />
+              <StatCard title="Total Tasks" value={s.filteredTasks.length} />
+              <StatCard title="Pending" value={s.filteredTasks.filter(t => t.status === "Pending").length} />
             </div>
 
             {/* Tasks Table */}
             <Card>
-              <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
                 <CardTitle>Security Tasks</CardTitle>
                 <CardDescription>View and complete assigned tasks</CardDescription>
-              </CardHeader>
+              </div>
+
+              {/* FILTER */}
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant={s.taskFilter === "all" ? "default" : "outline"}
+                  onClick={() => s.setTaskFilter("all")}
+                >
+                  All
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant={s.taskFilter === "today" ? "default" : "outline"}
+                  onClick={() => s.setTaskFilter("today")}
+                >
+                  Today
+                </Button>
+              </div>
+            </CardHeader>
               <CardContent> 
                 {s.loading ? (
                   <div className="text-center py-8">Loading...</div>
@@ -108,7 +129,7 @@ export function SecurityDashboard({ user, onLogout }) {
                         <TableRow>
                           <TableHead>Title</TableHead>
                           <TableHead className="text-center">Priority</TableHead>
-                          <TableHead>Created At</TableHead>
+                          <TableHead className="text-center">Time</TableHead>
                           <TableHead className="text-center">Task Type</TableHead>
                           <TableHead className="text-center">Status</TableHead>
                           <TableHead className="text-center">Action</TableHead>
@@ -116,7 +137,7 @@ export function SecurityDashboard({ user, onLogout }) {
                       </TableHeader>
 
                       <TableBody>
-                        {s.tasks.map(task => (
+                        {s.filteredTasks.map(task => (
                           <TableRow key={task.taskId}>
                             <TableCell>{task.title}</TableCell>
 
@@ -124,9 +145,9 @@ export function SecurityDashboard({ user, onLogout }) {
                               <Badge variant="outline">{task.priority}</Badge>
                             </TableCell>
 
-                            <TableCell>
-                              {task.createdAt
-                                ? new Date(task.createdAt).toLocaleString()
+                            <TableCell className="text-center">
+                              {s.bookingMap[task.bookingId]
+                                ? `${s.bookingMap[task.bookingId].startTime} - ${s.bookingMap[task.bookingId].endTime}`
                                 : "—"}
                             </TableCell>
 
