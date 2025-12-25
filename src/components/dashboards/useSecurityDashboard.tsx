@@ -1,9 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import {
   securityApi,
   roomsApi,
-  Booking,
   Room,
   SecurityTask,
   Report,
@@ -39,8 +38,23 @@ export function useSecurityDashboard(user: User) {
     useState<Report["severity"]>("Medium");
   const [reportDescription, setReportDescription] = useState("");
   const [reports, setReports] = useState<FrontendReport[]>([]);
- 
-  const today = new Date().toISOString().split("T")[0];
+  const formatVietnamDate = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Ho_Chi_Minh",
+    });
+    // Formats any date using Vietnam's timezone so "today" matches user expectations
+    return (date: Date) => formatter.format(date);
+  }, []);
+
+  const today = formatVietnamDate(new Date());
+
+  const getBookingVietnamDate = useCallback(
+    (booking?: FrontendBooking | null) => {
+      if (!booking?.date) return null;
+      return formatVietnamDate(new Date(booking.date));
+    },
+    [formatVietnamDate]
+  );
   const bookingMap = useMemo(() => {
   const map: Record<number, FrontendBooking> = {};
   approvedBookings.forEach(b => {
@@ -52,11 +66,12 @@ const filteredTasks = useMemo(() => {
   if (taskFilter === "today") {
     return tasks.filter(task => {
       const booking = bookingMap[task.bookingId];
-      return booking?.date === today;
+      const bookingDate = getBookingVietnamDate(booking);
+      return bookingDate === today;
     });
   }
   return tasks;
-}, [tasks, bookingMap, taskFilter, today]);
+}, [tasks, bookingMap, taskFilter, today, getBookingVietnamDate]);
 
 const roomIdToNameMap = rooms.reduce((acc, room) => {
   acc[room.id] = room.name;
@@ -203,19 +218,27 @@ ${reportDescription}
   const getTaskIcon = () => <></>; // replaced by UI icons
 
   // Derived data
-  const bookingsByDate = approvedBookings.reduce((acc, b) => {
-    acc[b.date] ??= [];
-    acc[b.date].push(b);
-    return acc;
-  }, {} as Record<string, Booking[]>);
+  const bookingsByDate = useMemo(() => {
+    return approvedBookings.reduce((acc, b) => {
+      const normalizedDate = getBookingVietnamDate(b);
+      if (!normalizedDate) {
+        return acc;
+      }
+      acc[normalizedDate] ??= [];
+      acc[normalizedDate].push(b);
+      return acc;
+    }, {} as Record<string, FrontendBooking[]>);
+  }, [approvedBookings, getBookingVietnamDate]);
 
   const todayBookings = bookingsByDate[today] || [];
 
-  const upcomingDates = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
-    return d.toISOString().split("T")[0];
-  });
+  const upcomingDates = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() + i);
+      return formatVietnamDate(d);
+    });
+  }, [formatVietnamDate]);
 
   return {
       tasks,

@@ -208,15 +208,15 @@ export function useStudentDashboard(user: User) {
   const loadApprovedBookings = async () => {
     const bookings = await bookingsApi.getBookingIndividual(
       Number(user.id),
-      "Approved"
     );
 
     const checkedInBookings = bookings.filter(
-      b => b.status?.toLowerCase() === "check-in" //nếu nó không chạy thì hãy thay đổi cái này thành status chech-in bên database của ae 
+      b => b.status?.toLowerCase() === "checked-in" //nếu nó không chạy thì hãy thay đổi cái này thành status chech-in bên database của ae 
     );
 
     setApprovedBookings(checkedInBookings);
 
+    console.log("REPORTABLE BOOKINGS :", bookings);
     console.log("REPORTABLE BOOKINGS (CHECK-IN):", checkedInBookings);
   };
 

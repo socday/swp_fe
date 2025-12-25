@@ -11,6 +11,8 @@ export interface SecurityTask {
   assignedToUserName?: string;
   createdBy?: number;
 
+  dueDate?: string;
+  dueTime?: string;
   reportNote?: string;
   createdAt?: string;
   completedAt?: string;

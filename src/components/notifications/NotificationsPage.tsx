@@ -48,6 +48,7 @@ export function NotificationsPage({ onBack }: NotificationsPageProps) {
   };
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const filteredNotifications = notifications.filter(n => n.userId === 3);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -86,7 +87,7 @@ export function NotificationsPage({ onBack }: NotificationsPageProps) {
               </div>
             ) : (
               <div className="space-y-2">
-                {notifications.map((notification) => (
+                {filteredNotifications.map((notification) => (
                   <div
                     key={notification.id}
                     className={`p-4 rounded-lg border transition-colors hover:shadow-md ${

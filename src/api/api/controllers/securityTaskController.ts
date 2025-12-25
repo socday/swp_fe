@@ -43,6 +43,7 @@ export const securityTaskController = {
     const { data } = await apiClient.get<SecurityStaffDto[]>(
       '/SecurityTask/security-staff'
     );
+    console.log('Fetched security staff with task counts:', data);
     return data;
   }
 

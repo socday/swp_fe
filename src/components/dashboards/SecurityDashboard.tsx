@@ -146,9 +146,7 @@ export function SecurityDashboard({ user, onLogout }) {
                             </TableCell>
 
                             <TableCell className="text-center">
-                              {s.bookingMap[task.bookingId]
-                                ? `${s.bookingMap[task.bookingId].startTime} - ${s.bookingMap[task.bookingId].endTime}`
-                                : "—"}
+                              {task.dueDate}   {task.dueTime}
                             </TableCell>
 
                             <TableCell className="text-center">
