@@ -62,7 +62,7 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
   const roomImages = getRoomImages(room.id);
 
   // Use allSlots for recurring bookings, availableSlots for single bookings
-  const displaySlots = bookingType === "recurring" ? allSlots : availableSlots;
+  const displayslots = bookingType === "recurring" ? allSlots : availableSlots;
 
   const getRecurrencePatternLabel = (pattern: RecurrencePattern) => {
     const labels = {
@@ -313,9 +313,9 @@ export function BookingDialog({ room, open, userRole, initialDate, onClose, onSu
                 Select Time Slots (Multiple Selection)
               </Label>
 
-              {allSlots.length > 0 ? (
+              {displayslots.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {allSlots.map((slot, index) => {
+                  {displayslots.map((slot, index) => {
                     const isSelected = selectedSlots.some((s) => s.id === slot.id);
                     return (
                       <motion.div

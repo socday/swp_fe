@@ -58,6 +58,12 @@ export function MyBookings({ userId }: MyBookingsProps) {
         return <Badge variant="destructive">Rejected</Badge>;
       case "cancelled":
         return <Badge variant="secondary">Cancelled</Badge>;
+      case "checked_in":
+        return <Badge className="bg-blue-500">Checked In</Badge>;
+      case "completed":
+        return <Badge className="bg-purple-500">Completed</Badge>;
+      case "no_show":
+        return <Badge className="bg-red-500">No Show</Badge>;
       default:
         return null;
     }

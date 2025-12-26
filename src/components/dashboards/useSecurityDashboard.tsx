@@ -48,10 +48,10 @@ export function useSecurityDashboard(user: User) {
 
   const today = formatVietnamDate(new Date());
 
-  const getBookingVietnamDate = useCallback(
-    (booking?: FrontendBooking | null) => {
-      if (!booking?.date) return null;
-      return formatVietnamDate(new Date(booking.date));
+  const getTaskVietnamDate = useCallback(
+    (task?: SecurityTask | null) => {
+      if (!task?.dueDate) return null;
+      return formatVietnamDate(new Date(task.dueDate));
     },
     [formatVietnamDate]
   );
@@ -64,14 +64,16 @@ export function useSecurityDashboard(user: User) {
 }, [approvedBookings]);
 const filteredTasks = useMemo(() => {
   if (taskFilter === "today") {
+    console.log('Filtering tasks for today:', tasks);
     return tasks.filter(task => {
-      const booking = bookingMap[task.bookingId];
-      const bookingDate = getBookingVietnamDate(booking);
+
+      const bookingDate = getTaskVietnamDate(task);
+      console.log('Booking date for task:', task);
       return bookingDate === today;
     });
   }
   return tasks;
-}, [tasks, bookingMap, taskFilter, today, getBookingVietnamDate]);
+}, [tasks, bookingMap, taskFilter, today, getTaskVietnamDate]);
 
 const roomIdToNameMap = rooms.reduce((acc, room) => {
   acc[room.id] = room.name;
@@ -220,7 +222,7 @@ ${reportDescription}
   // Derived data
   const bookingsByDate = useMemo(() => {
     return approvedBookings.reduce((acc, b) => {
-      const normalizedDate = getBookingVietnamDate(b);
+      const normalizedDate = getTaskVietnamDate(b);
       if (!normalizedDate) {
         return acc;
       }
@@ -228,7 +230,7 @@ ${reportDescription}
       acc[normalizedDate].push(b);
       return acc;
     }, {} as Record<string, FrontendBooking[]>);
-  }, [approvedBookings, getBookingVietnamDate]);
+  }, [approvedBookings, getTaskVietnamDate]);
 
   const todayBookings = bookingsByDate[today] || [];
 

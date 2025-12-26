@@ -218,6 +218,12 @@ export function useMyBookings(userId: string) {
         return "rejected";
       case "Cancelled":
         return "cancelled";
+      case "Checked-In":
+        return "checked_in";
+      case "Completed":
+        return "completed";
+      case "No-Show":
+        return "no_show";
       default:
         return "unknown";
     }
