@@ -243,7 +243,7 @@ export function useStudentDashboard(user: User) {
     }
 
     // 🔒 Double check an toàn
-    if (booking.status?.toLowerCase() !== "check-in") {
+    if (booking.status?.toLowerCase() !== "checked-in") {
       toast.error("You can only report a checked-in booking");
       return;
     }

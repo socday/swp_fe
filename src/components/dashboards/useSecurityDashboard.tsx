@@ -84,7 +84,8 @@ const roomBookings = approvedBookings.filter(
   b => b.facilityName === roomIdToNameMap[Number(selectedRoomId)]
 );
 
-const roomTimeSlots = roomBookings.map(b => ({
+const roomTimeSlots =
+ roomBookings.map(b => ({
   value: `${b.date}|${b.startTime}|${b.endTime}`,
   label: `${b.date} · ${b.startTime} - ${b.endTime}`,
 }));
